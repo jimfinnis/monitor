@@ -139,7 +139,6 @@ frame mapframe {
             
             sizerange 2 20 var b
         }
-
         vector {
             # we also draw a vector at each point - the same points.            
             location var lat, var lon on var lat
@@ -155,6 +154,7 @@ frame mapframe {
             # and the vector is black (default is white, for technical reasons)
             colour black
         }
+
     }
 }
 

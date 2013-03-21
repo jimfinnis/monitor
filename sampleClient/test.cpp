@@ -25,7 +25,7 @@ void udpwrite(const char *s,...);
 
 float a = 2;
 
-float warming = 0.19;
+float warming = 0.15;
 float tdecay = 0.99;
 float *heat;
 
@@ -34,7 +34,7 @@ void runsim(double t){
     udpwrite("a=%f heat=%f",a,*heat);
     
     a += warming; //temperature coming in
-    a += *heat*0.01; // extra heat
+    a += *heat*0.04; // extra heat
     a *= tdecay; // temperature going out
     
     
