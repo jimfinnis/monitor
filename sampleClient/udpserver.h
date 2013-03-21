@@ -14,8 +14,8 @@
 
 /*
  * 
- * Simple UDP server, used when we want to listen for data changes
- *
+ * Simple UDP server - we use this in a robot when we want to listen
+ * for changes made by switches etc. in the monitor.
  */
 
 class UDPServer {
