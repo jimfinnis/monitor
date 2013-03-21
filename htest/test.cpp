@@ -16,22 +16,25 @@
 #include <math.h>
 
 #include "udpclient.h"
+#include "udpserver.h"
 
-int port=33333;
+int outport=33333;
+int inport=33334;
+
 void udpwrite(const char *s,...);
 
 float a = 2;
 
 float warming = 0.19;
 float tdecay = 0.99;
-float heat =0;
+float *heat;
+
 
 void runsim(double t){
-    udpwrite("a=%f",a);
-    
+    udpwrite("a=%f heat=%f",a,*heat);
     
     a += warming; //temperature coming in
-    a += heat*0.01; // extra heat
+    a += *heat*0.01; // extra heat
     a *= tdecay; // temperature going out
     
     
@@ -55,24 +58,22 @@ void udpwrite(const char *s,...){
     sprintf(buf,"time=%f ",gettime());
     vsnprintf(buf+strlen(buf),1024-strlen(buf),s,args);
     printf("%s\n",buf);
-    udpSend("127.0.0.1",port,buf);
+    udpSend("127.0.0.1",outport,buf);
     va_end(args);
 }
 
 
 int main(int argc,char *argv[]){
-    time_t t;
-    char buf[256];
     
-    time_t st;
-    time(&st);
+    UDPServer s(inport);
     
-    heat = atof(argv[1]);
+    heat=s.createVar("heat");
     
-    printf("Port is %d\n",port);
+    printf("outport is %d, inport is %d\n",outport,inport);
     for(;;){
         usleep(30000);
-        runsim(t);
+        s.update();
+        runsim(gettime());
     }
         
 }

@@ -101,11 +101,12 @@ void UDPServer::parseLine(const char *s){
                 valbuf[n]=0;
                 mode=WAITVAR;
                 
-  //                printf("Got [%s = %s]\n",varbuf,valbuf);
+                  printf("Got [%s = %f]\n",varbuf,atof(valbuf));
                 
                 
                 float *p = findVar(varbuf);
                 if(p) *p=atof(valbuf);
+                else printf("CANNOT FIND VARIABLE %s\n",varbuf);
             }
             else n++;
             break;
@@ -136,13 +137,17 @@ void UDPServer::update(){
 float *UDPServer::createVar(const char *name){
     float *v= new float();
     *v = 0;
+    printf("CREATE %p\n",v);
     map[std::string(name)] = v;
+    return v;
 }
 
 float *UDPServer::findVar(const char *name){
     std::string k(name);
     if(map.find(k)==map.end())
         return NULL;
-    else
+    else{
+        printf("FIND %p\n",map[k]);
         return map[k];
+    }
 }

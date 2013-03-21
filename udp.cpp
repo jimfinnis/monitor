@@ -82,6 +82,8 @@ void UDPClient::update(){
     
     QString s;
     
+    if(values.size()==0)return;
+    
     foreach(OutValue * const &v, values){
         if(v->always || v->timeChanged<v->timeSent){
             QTextStream(&s) << " " << v->name << "=" << v->val;
@@ -93,7 +95,7 @@ void UDPClient::update(){
         }
     }
     sock.writeDatagram(out.toLatin1(),addr,port);
-    qDebug() << out;
+//    qDebug() << out;
 }
 
 
