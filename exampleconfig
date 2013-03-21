@@ -1,0 +1,171 @@
+#
+# First there's a block of variable declarations. There
+# should be one of these for each key which appears in the
+# data stream, except for "time".
+
+# These are separated by commas.
+
+var
+    # Currently only float values are supported - we can emulate
+    # others with these.
+    
+    # "a" is a variable with range -1 to 1. We'll store 100 values
+    # for it in a cyclic buffer, so we can graph 100 values back.
+    
+    float a 100 range -1 to 1,
+
+    # Similarly, "b" is a 100-long buffer which takes values from -1
+    # to 1.
+
+    float b 100 range -1 to 1,
+    
+    # "lat" and "lon" should always be considered to be a pair,
+    # so we link them - if a lat ever arrives without a lon, a
+    # lon will be created at the same time with the same value
+    # it had previously.
+    # Lat has range -90 to 90, lon has range -180 to 180
+    # Being linked, they have the same buffer size - 1000 values.
+    
+    linked (
+        float lat range -90 to 90,
+        float lon range -180 to 180) 1000
+
+# That's the variables, now we can define the widgets.
+
+# There are three frames (currently) hardwired into the application:
+# mapframe (topleft), right and bottom.
+# We place widgets into these using "pos" with an x,y position and
+# optional w,h fields. The layout manager will automatically size
+# the frame's grid.
+
+frame right {
+
+    # at top left in this frame, a gauge for variable "a". The
+    # range is obtained from the variable.
+    gauge { pos 0,0 var a }
+
+    # below it, a gauge for variable b.
+    gauge { pos 0,1 var b }
+
+    # and below that, a gauge for the expression "a+b". When
+    # we use an expression as a data source we must specify
+    # a range.
+    gauge { pos 0,2 expr "a+b" range -2 to 2}
+
+    # to the right of those, and taking up 2 notional vertical
+    # slots, a status block. These consist of indicators which
+    # show different values depending on their sources.
+    
+    status {
+        pos 1,0,1,2 # x,y,w,h
+        size 1,3 # there at 1x3 indicators in the block
+
+        # floatrange is the most complex type, so I'll get it out
+        # of the way - this shows different colours by assigning
+        # a colour to a range of the values.
+        
+        floatrange {
+            pos 0,0
+            title "a is big"
+            var a   # our source
+
+            # "bands" precedes a list of less-than conditions. The first
+            # to be true is the colour we use, otherwise we use the "else"
+            # colour (which has to be last)
+            bands 
+                <0.7    green   # -1 to 0.7
+                <0.9    yellow  # 0.7 to 0.9
+                else    red     # 0.9 to 1
+        }
+        
+        # this is very similar but uses "bands previous" to copy the
+        # bands definition from the previously parsed indicator,
+        # as a useful shorthand.
+        
+        floatrange {
+            pos 0,1
+            title "b is big"
+            var b
+            bands previous
+        }
+         
+        # bool requires a boolean expression source,
+        # which is actually a float in the range -1 to 1 (although
+        # you can specify "range auto".)  
+        
+        bool {
+            pos 0,2
+            title "a and b both -ve"
+            expr "a<0 && b<0" range auto
+        }
+    }
+    
+    # and finally we'll add a compass, showing a*180 (i.e. from -180 to 180)
+    # as a heading.
+    
+    compass {
+        pos 1,2
+        title "heading"
+        expr "a*180" range auto
+    }        
+} 
+
+# now we'll put a map into the mapframe
+        
+frame mapframe {
+    map {
+        pos 0,0 # the map is the only item in the frame
+        
+        
+        point {
+            # For this point renderer,
+            # we render points at lat,lon, with a new point
+            # every time we get a new lat. Note that lat comes first.
+
+            location var lat,var lon on var lat
+            
+            # we also render 40 of the previous points when new "lat" data arrived.
+            
+            trail 40
+
+            # var a's range is mapped onto the entire hue range, in which 0 is red
+            # and 1 is back to red again; so a=-1 will be red as will a=1. If you
+            # wanted to do something cleverer, you could use an expression.
+            
+            hue var a
+            
+            # we map variable b's range (-1 to 1) onto the size range 2-20 pixels
+            # to determine the size of the circle drawn.
+            
+            sizerange 2 20 var b
+        }
+
+        vector {
+            # we also draw a vector at each point - the same points.            
+            location var lat, var lon on var lat
+            
+            trail 40
+            
+            # the width of the vector is set to 3 pixels
+            width 3
+            
+            # the direction of the vector comes from the expression a*180.
+            degrees expr "a*180" range auto
+            
+            # and the vector is black (default is white, for technical reasons)
+            colour black
+        }
+    }
+}
+
+
+frame bottom {
+    # we fill the bottom frame with a graph of a and b, 100 seconds wide.
+    graph {
+        pos 0,0
+        time 100
+        var a { col red width 2}
+        var b { col yellow width 2}
+    }
+}
+        

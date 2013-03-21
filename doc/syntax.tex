@@ -1,0 +1,292 @@
+\section{Blocks}
+A file consist of blocks, which are either variable blocks
+or frame blocks.
+
+\begin{v}
+file        ::= { block }
+
+block       ::= varblock
+            |   frameblock
+\end{v}
+
+\todo{Port, sendport and sendaddr configuration. Switches.}
+
+\subsection{Variable blocks}
+Variable blocks describe the variables which arrive on the UDP
+connection, and consist of a list of comma-separated variable definitions.
+\begin{v}
+varblock    ::= 'var' {vardef ','} vardef
+\end{v}
+Currently only floating point variables are supported.
+Some floating point variables may be \emph{linked.}
+
+A normal floating point variable definition specifies the name of the variable
+(an identifier,) the size of the cyclic buffer backing the variable,
+and a range specification.
+
+A linked variable definition consists of a number of variables,
+separated by commas, in brackets; followed by a buffer size.
+Linked variable specifications give the name of the variable and
+a range (which cannot be `auto' --- see below.)
+\begin{v}
+vardef      ::= 'float' varname buffersize 'range' rangespec
+            |   'linked' '(' { linkedvar ',' } linkedvar ')' buffersize
+
+linkedvar   ::= 'float' varname 'range' <float> to <float>
+
+buffersize  ::= int
+varname     ::= ident
+            
+\end{v}
+When a message arrives giving the value of a linked variable, dummy
+entries with the same timestamp are created for other variables
+in the link with the previous value those variables had. Linked
+variables are used for sets of variables which comprise a single
+entity, such as latitude and longitude or \emph{xyz} coordinates,
+where if a change is received on one variable the others should be
+considered to have changed even though an explicit change was not
+sent.
+
+Range specifications describe the values a variable can take in
+normal operation --- these are the values any widget viewing this
+variable will be able to show. If the range is specified as \emph{auto},
+the range will be determined dynamically. Linked variables cannot
+have auto range.
+\begin{v}
+<rangespec> ::= <float> to <float>
+                | auto
+\end{v}
+
+\subsection{Frame blocks}
+Frame blocks describe the contents of a predefined frame on
+the screen. The name of the frame must be one of the frames set
+up by the C++ code. Each frame block consists of a set of widget
+blocks, contained by curly brackets.
+\begin{v}
+frameblock  ::= 'frame' framename '{' {widget} '}'
+
+framename   ::= ident
+
+widget      ::= gauge | number | graph | map | status
+\end{v}
+\clearpage
+\subsection{Widgets}
+All widget specification consist of the widget type followed
+by a widget specification in curly brackets. They always
+contain a position, and usually at least one data source.
+
+\subsubsection{Positions}
+Widget positions describe where widgets appear in the frame's
+grid layout, and how many rows and columns they take up. They
+are either an x,y pair (with an implied width and height) or a full
+x, y, w, h set.
+\begin{v}
+pos         ::= 'pos' x ',' y [ ',' w ',' h ]
+
+x           ::= int
+y           ::= int
+w           ::= int
+h           ::= int
+\end{v}
+
+\subsubsection{Sources}
+A source specification describes a data source. It is either a
+variable, or an expression and a range.
+\begin{v}
+source      ::= 'var' varname
+            |   'expr' string 'range' rangespec
+\end{v}
+An expression is an infix expression in double quotes consisting of:
+\begin{itemize}
+\item names of variables declared in the \textbf{var} blocks;
+\item float constants;
+\item the four arithmetic operators with their usual precedence;
+\item the comparison operators \verb+<+ \verb+>+ \verb+>=+ \verb+<=+ 
+\verb+!=+ \verb+=+
+\item the logical negate operator ``!''
+\end{itemize}
+\todo{Oversight -- no binary logical operators!}
+
+\subsubsection{Gauge widgets}
+A gauge widget consists of the position, followed by any of the following,
+some of which are mandatory:
+\begin{itemize}
+\item a \textbf{source specification} (mandatory)
+\item a \textbf{position specification} (mandatory)
+\item a \textbf{title string} giving the gauge's label --- without this,
+the variable name or expression string from the source are used;
+\item a \textbf{subtitle string} giving a smaller label, which is empty
+by default;
+\item a \textbf{levels specification} giving the value of the warning
+and danger levels in terms of the input source range --- if the source range is
+auto, these should be 0-1. If \emph{previous} is specified, the preceding
+level specification is used;
+\item a \textbf{colours} specification giving colours for 
+the normal, warn and danger ticks;
+\item a \textbf{darken} factor, giving the value used to darken the colours
+to show the ``off'' ticks on the gauge. The default is 400, which means that
+the dark colour is a quarter of the bright colour. The higher the value, 
+the darker the colour. A \emph{previous} value is also accepted.
+\end{itemize}
+\begin{v}
+gauge       ::= 'gauge' pos '{' { gaugemod } '}'
+gaugemod    ::=
+            |   pos
+            |   source
+            |   'title' string
+            |   'subtitle' string
+            |   'levels' levelspec
+            |   'colours' grcolspec
+            |   'darken' (int | 'previous')
+
+levelspec   ::= warnlevel dangerlevel
+            |   'previous'
+            
+grcolspec   ::= normcol warncol dangercol
+            |   'previous'
+            
+normcol     ::= colour
+warncol     ::= colour
+dangercol   ::= colour
+
+colour      ::= colourname
+            |   '"#' hexdigit hexdigit hexdigit '"'
+
+warnlevel   ::= float            
+dangerlevel ::= float            
+\end{v}
+
+\subsubsection{Number widgets}
+Number widgets consists of a position, an optional title and
+a source.
+\begin{v}
+number      ::= 'number' '{' pos [ 'title' string ] source '}'
+\end{v}
+
+\subsubsection{Graph widgets}
+This consists of a position, a time value (giving
+the width of the graph in seconds) and a list of graph
+sources.
+
+Each source consists of a source specification and a set
+of graph modifiers in curly brackets, which describe the
+style of line drawn for that source.
+
+\begin{v}
+graph       ::= 'graph' '{' pos [ 'time' float ] { graphsource } '}'
+
+graphsource ::= source '{' { graphmod } '}'
+
+graphmod    ::= 'width' float 
+            |   'colour' colour
+\end{v}
+
+\subsubsection{Maps}
+A map shows an map image with points overlaid. It consists
+of a screen position, as with other widgets,
+followed by a set of map points or vectors to render.
+
+\begin{v}
+map         ::= 'map' '{' pos { mappoint|mapvector } '}'
+\end{v}
+
+\textbf{Map points} represent data as circles on the map
+whose colour and screen size depends on data sources.
+Their definitions consist of the word `point' followed
+by a point specification in curly brackets.
+This consists of a location specification
+(two sources separated by commas for latitude and longitude
+respectively) followed by a list of map point modifiers.
+These describe how the point is drawn. Finally, there should
+be an `on' clause, which specifies how new points are drawn ---
+a new point is created whenever a new datum value
+arrives in this source.
+
+The point modifiers can be a a base colour (white by default),
+a hue clause specifying a source which can be mapped onto the 
+hue range, similar saturation and value sources, a default
+size, and a size range clause mapping a source onto a size range
+which replaces the default size. A trail size can also be specified
+to allow a number of historical points to be rendered.
+
+\begin{v}
+mappoint    ::= 'point' '{' location [{ pointmod }] 'on' source '}'
+
+pointmod    ::= 'colour' colour
+            |   'hue' source
+            |   'saturation' source
+            |   'value' source
+            |   'size' float
+            |   'trail' int
+            |   'sizerange' minsize maxsize source
+
+location    ::= lat ',' long
+lat         ::= source
+long        ::= source
+\end{v}
+
+\textbf{Map vectors} are similar to points, but represent data
+by a line coming from a point on the map. The line's starting location,
+length (in pixels), colour and width can be modified by data sources
+in a similar way to the size and colour of a point.
+
+\begin{v}
+mapvector    ::= 'vector' '{' location [{ vectormod }] 'on' source '}'
+
+vectormod    ::= 'colour' colour
+            |   'hue' source
+            |   'saturation' source
+            |   'value' source
+            |   'width' float
+            |   'widthrange' minsize maxsize source
+            |   'length' float
+            |   'lengthrange' minsize maxsize source
+            |   'trail' int
+
+location    ::= lat ',' long
+lat         ::= source
+long        ::= source
+\end{v}
+
+\subsubsection{Status widgets}
+A status widget consists of a position, a grid size specification
+(giving the number of rows and columns of indicators in the grid)
+and then a set of status indicators, which currently are all
+of type \emph{floatrange.} 
+
+\begin{v}
+status      ::= 'status' pos 'size' int ',' int { floatrange }
+\end{v}
+
+Each floatrange indicator consists of `floatrange', and a specification
+in curly brackets containing a grid position, a title, a source
+and then a set of bands. Optionally there can then follow a set
+of \emph{when} clauses, which specify alternate title strings
+to use when the indicator is a particular colour.
+\begin{v}
+floatrange  ::= 'floatrange' '{' 
+                    'pos' int ',' int
+                    'title' string
+                    source
+                    bands
+                    [{ 'when' statcolour string }]
+                '}'
+\end{v}
+The bands in a status indicator consist of `bands' followed by
+a set of band specifications, each of which is a less-than sign,
+a float, and a colour. When a value is received on the source,
+is goes through each of these bands is first, and the first for
+which the comparison is true gives the colour. The bands end
+with an \emph{else} clause giving the default colour.
+
+An alternative form of band specification is the word `previous,'
+which means ``copy the bands from the previous indicator's
+specification.'' It is an error to use this in the first indicator.
+\begin{v}
+bands       ::= 'bands' ( fullbands | 'previous' )
+fullbands   ::= { '<' float statcolour }
+                'else' statcolour
+statcolour  ::= 'red' | 'green' | 'blue' | 'black' | 'yellow'
+\end{v}
+               
+

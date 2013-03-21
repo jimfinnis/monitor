@@ -1,0 +1,16 @@
+#!/bin/sh
+# set up a tunnel for monitor data from pcjaf18 to ruby. The rover
+# should then set up a tunnel for data from it to pcjaf18.
+
+# kill old processes
+
+ps ax | grep ssh | grep 13231 | awk '{print $1}' |xargs kill
+
+# create reverse tunnel for data from pcjaf18 port 13231 to same port
+# locally
+
+ssh -qNf -R 13231:localhost:13231 jaf18@pcjaf18.dcs.aber.ac.uk
+
+# convert TCP to UDP packets (we can't tunnel UDP directly)
+
+nc -l 13231 | nc -u 127.0.0.1 13231

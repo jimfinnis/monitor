@@ -1,0 +1,100 @@
+var float actual1 100 range -2500 to 2500,
+    float actual2 100 range -2500 to 2500,
+    float actual3 100 range -2500 to 2500,
+    float actual4 100 range -2500 to 2500,
+    float actual5 100 range -2500 to 2500,
+    float actual6 100 range -2500 to 2500,
+    float req1 100 range -2500 to 2500,
+    float req2 100 range -2500 to 2500,
+    float req3 100 range -2500 to 2500,
+    float req4 100 range -2500 to 2500,
+    float req5 100 range -2500 to 2500,
+    float req6 100 range -2500 to 2500,
+    float lift1 100 range -20 to 20,
+    float lift2 100 range -20 to 20,
+    float lift3 100 range -20 to 20,
+    float lift4 100 range -20 to 20,
+    float lift5 100 range -20 to 20,
+    float lift6 100 range -20 to 20,
+    float steer1 100 range -60 to 60,
+    float steer2 100 range -60 to 60,
+    float steer3 100 range -60 to 60,
+    float steer4 100 range -60 to 60,
+    float steer5 100 range -60 to 60,
+    float steer6 100 range -60 to 60,
+    float current1 100 range 0 to 100,
+    float current2 100 range 0 to 100,
+    float current3 100 range 0 to 100,
+    float current4 100 range 0 to 100,
+    float current5 100 range 0 to 100,
+    float current6 100 range 0 to 100,
+    float temp1 1000 range 2 to 15,
+    float temp2 1000 range 2 to 15,
+    float temp3 1000 range 2 to 15,
+    float temp4 1000 range 2 to 15,
+    float temp5 1000 range 2 to 15,
+    float temp6 1000 range 2 to 15,
+    float temp7 1000 range 2 to 15,
+    float temp8 1000 range 2 to 15,
+    float temp9 1000 range 2 to 15,
+    
+    float dist 1000  range 0 to 10000
+
+frame mapframe {
+    gauge { pos 0,0 var req1 }
+    gauge { pos 1,0 var req3 }
+    gauge { pos 2,0 var req5 }
+    gauge { pos 0,1 var req2 }
+    gauge { pos 1,1 var req4 }
+    gauge { pos 2,1 var req6 }
+}
+
+frame right {
+    gauge { pos 0,0 var steer1}
+    gauge { pos 1,0 var steer3}
+    gauge { pos 2,0 var steer5}
+    gauge { pos 0,1 var steer2}
+    gauge { pos 1,1 var steer4}
+    gauge { pos 2,1 var steer6}
+
+    gauge { pos 3,0 var lift1}
+    gauge { pos 4,0 var lift3}
+    gauge { pos 5,0 var lift5}
+    gauge { pos 3,1 var lift2}
+    gauge { pos 4,1 var lift4}
+    gauge { pos 5,1 var lift6}
+
+
+}
+
+
+
+frame bottom {
+
+    gauge { pos 0,0 var current1}
+    gauge { pos 1,0 var current2}
+    gauge { pos 2,0 var current3}
+    gauge { pos 0,1 var current4}
+    gauge { pos 1,1 var current5}
+    gauge { pos 2,1 var current6}
+
+    graph {
+        pos 3,0,    4,2
+        time 300
+        var temp1 { col red width 2}
+        var temp2 { col red width 3}
+        var temp3 { col red width 1}
+        
+        var temp4 { col green width 2}
+        var temp5 { col green width 3}
+        var temp6 { col green width 1}
+        
+        var temp7 { col blue width 2}
+        var temp8 { col blue width 3}
+        var temp9 { col blue width 1}
+        
+        var dist { col white }
+    }
+}
+
+
