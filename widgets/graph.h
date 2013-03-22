@@ -11,7 +11,7 @@
 
 #include <QWidget>
 #include <QString>
-#include <QHash>
+#include <QList>
 #include <QColor>
 #include <QPainter>
 
@@ -37,6 +37,9 @@ public:
     QColor color; //!< pen colour
     qreal width; //!< pen width
           
+    double minVal; //!< start of range
+    double maxVal; //!< end of range
+    
     /// parse the configuration details for a variable and return
     /// a new graph float renderer. This assumes that "var x {" has
     /// just been parsed.
@@ -61,9 +64,6 @@ public:
     virtual void paintEvent(QPaintEvent *event);
     
     
-    /// remove a given variable's buffer and renderer
-    void remove(const char *name);
-    
     /// parse the configuration details for a gauge 
     Graph(const char *frameName,Tokeniser *t);
     
@@ -78,7 +78,7 @@ public:
     }
 private:
     /// renderers by buffer name (just floats for now)
-    QHash<QString,GraphDataRenderer *> renderers;
+    QList<GraphDataRenderer *> renderers;
 };
 
 

@@ -20,14 +20,6 @@
 
 #define DEFAULTWIDTHINSECONDS 30
 
-void Graph::remove(const char *name){
-    GraphDataRenderer *r = renderers.value(name);
-    if(r){
-        delete r;
-        renderers.remove(name);
-    }
-}
-
 void Graph::paintEvent(QPaintEvent *event){
     double w = width();
 
@@ -48,17 +40,13 @@ void Graph::paintEvent(QPaintEvent *event){
     // refactor with a QImage backing the data or something.
     painter.setCompositionMode(QPainter::CompositionMode_Plus);
     
+    QFont font("Sans",8,QFont::Normal);
+    painter.setFont(font);
     
     // now iterate over the renderers
-    QHashIterator<QString, GraphDataRenderer *> i(renderers);
-    int idx=0;
-    while (i.hasNext()) {
-        i.next();
-        
-        QString name = i.key(); // name of variable
-        GraphDataRenderer *r = i.value(); // the renderer
-        
-        r->render(idx++,this,painter);
+    
+    for(int i=0;i<renderers.size();i++){
+        renderers[i]->render(i,this,painter);
     }
     
     // write the image to the widget
@@ -93,7 +81,7 @@ Graph::Graph(const char *frameName,Tokeniser *t) : QWidget(NULL){
             buf = ConfigManager::parseFloatSource();
             t->getnextcheck(T_OCURLY);
             GraphFloatRenderer *r = new GraphFloatRenderer(this,buf,t);
-            renderers.insert(buf->name,r);
+            renderers.append(r);
             break;
         }
         case T_CCURLY:
@@ -131,6 +119,13 @@ DataRenderer(g,b){
             break;
         }
     }
+    
+    // and work out the range, which should cover an area slightly 
+    // wider than the buffer
+    
+    float w = (b->maxVal - b->minVal)*0.1f; // width of extra coverage
+    minVal = b->minVal - w;
+    maxVal = b->maxVal + w;
 }
 
 void GraphFloatRenderer::render(int idx,Graph *g,QPainter &painter){
@@ -138,7 +133,7 @@ void GraphFloatRenderer::render(int idx,Graph *g,QPainter &painter){
     double w = g->width();
     DataBuffer<float> *buf = buffer->getFloatBuffer();
     
-    float yscale = h/(buf->maxVal-buf->minVal);
+    float yscale = h/(maxVal-minVal);
     
     QFontMetrics metrics = painter.fontMetrics();
     
@@ -168,7 +163,7 @@ void GraphFloatRenderer::render(int idx,Graph *g,QPainter &painter){
         float x = g->tNow-(double)d->t;
         x = w-x*g->pixPerSec;
 
-        float y = d->d - buf->minVal;
+        float y = d->d - minVal;
         y = h - y*yscale;
         
         if(prevTime){

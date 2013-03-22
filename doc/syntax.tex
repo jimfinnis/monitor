@@ -1,13 +1,24 @@
 \section{Blocks}
 A file consist of blocks, which are either variable blocks
-or frame blocks.
+or frame blocks. A few other settings are specified at this level:
+\begin{itemize}
+\item the port number to receive data from;
+\item the port and address to send output data (e.g. from switches)
+to.
+\end{itemize}
+
 
 \begin{v}
 file        ::= { block }
 
 block       ::= varblock
             |   frameblock
+            |   'port' integer
+            |   'sendport' integer
+            |   'sendaddr' integer
+            
 \end{v}
+
 
 \todo{Port, sendport and sendaddr configuration. Switches.}
 
@@ -67,7 +78,8 @@ frameblock  ::= 'frame' framename '{' {widget} '}'
 
 framename   ::= ident
 
-widget      ::= gauge | number | graph | map | status
+widget      ::= gauge | number | graph | map | status |
+                compass | switch
 \end{v}
 \clearpage
 \subsection{Widgets}
@@ -255,7 +267,12 @@ and then a set of status indicators, which currently are all
 of type \emph{floatrange.} 
 
 \begin{v}
-status      ::= 'status' pos 'size' int ',' int { floatrange }
+status      ::= 'status' '{' 
+                pos
+                pos 
+                'size' int ',' int
+                { floatrange }
+               '}'
 \end{v}
 
 Each floatrange indicator consists of `floatrange', and a specification
@@ -289,4 +306,64 @@ fullbands   ::= { '<' float statcolour }
 statcolour  ::= 'red' | 'green' | 'blue' | 'black' | 'yellow'
 \end{v}
                
+\subsubsection{Compass}
+The compass widget simply shows a heading. Its source is a value
+in degrees:
+\begin{v}
+compass     ::= 'compass' '{'
+                pos 
+                [ 'title' string ]
+                source
+                '}'
+\end{v}
 
+
+\subsection{Output widgets}
+All widgets so far have been input widgets, showing data
+sent from the remote system to the monitor.
+
+Output widgets allow UDP packets to be sent back from the monitor
+to the rover.
+
+Data is sent to the server specified in \emph{sendaddr} and
+the port specified in \emph{sendport} in the config file, and
+is in the form of key/value pairs, similar to the data sent
+from the remote. A single packet contains all output variables
+due for sending. Variables are due for sending if the time
+at which they were changed is more recent than the last time
+they were sent. This is checked every time the state of an output
+widget is changed, so this will always result in send.
+
+In addition, output variables can be specified as being \emph{always send.}
+Such variables are periodically sent whether they have changed 
+or not (typically every two seconds or so.) This is in case
+UDP packets are dropped. \textbf{This is currently true for all variables.} 
+
+Finally, most output widgets have an optional input source. This
+allows for confirmation of the receipt of an output. The widget
+in this case has three states:
+\begin{itemize}
+\item \textbf{OK} - the widget shows the state sent, and a packet has been
+received since the last send in which the designated source
+matches the output sent.
+\item \textbf{NOACK} - the widget shows ``barberpole'': a packet
+has been sent but no packet has been received containing the designated input source.
+\item \textbf{BADACK} - the widget shows ``error'' (a crosshatch
+pattern) : a packet has been sent, and a packet has been received from
+the designated source, but the two values do not agree.
+\end{itemize}
+
+
+\subsubsection{Switch}
+A switch allows a boolean to be output back to the rover. It acts
+as a toggle. The value is actually sent as a float, 0 or 1; and any
+feedback source should be similar. The initial state is false (0.)
+
+\begin{v}
+switch      ::= 'switch' '{'
+                pos
+                [ source ]
+                'out' ident
+                [ 'title' string ]
+                '}'                
+\end{v}

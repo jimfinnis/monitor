@@ -1,6 +1,8 @@
+- gauge centering too simpleminded (-0.1 to 1.1 shows as centered)
 - polyline trail on maps
 - "age" pseudovariable for map node data?
 - variable "recent" 
-- graph sorting!
-- range on graphs is too narrow (can't see 0 and 1 on a range 0 to 1 var)
-- gauge centering too simpleminded (-0.1 to 1.1 shows as centered)
+
+- momentary switch
+- switch default on or off
+- "always send" optional
