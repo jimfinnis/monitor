@@ -15,6 +15,7 @@
 #include <QLabel>
 #include <QTimer>
 #include <QDebug>
+#include <QVariant>
 
 #include "app.h"
 #include "config.h"
