@@ -56,6 +56,8 @@ Gauge::Gauge(QWidget *parent,Tokeniser *t) :
     yellowCol = defaultYellowCol;
     darkFactor = defaultDarkFactor;
     
+    inverse = ConfigManager::inverse;
+    
     while(!done){
         switch(t->getnext()){
         case T_EXPR:
@@ -133,6 +135,7 @@ Gauge::Gauge(QWidget *parent,Tokeniser *t) :
     layout->setContentsMargins(0,0,0,0);
     main = new GaugeInternal(this);
     label = new QLabel(title);
+    ConfigManager::setStyle(label);
     label->setAlignment(Qt::AlignCenter);
     if(subtitle[0]){
         label2 = new QLabel(subtitle);
@@ -188,12 +191,14 @@ void Gauge::handlePaint(UNUSED QPaintEvent *p,GaugeInternal *widget){
 
     int w = widget->width();
     int h = widget->height();
+    
+    float qq = inverse ? 300 : 100;
 
-    QColor redOn = redCol;
+    QColor redOn = redCol.darker(qq);
     QColor redOff = redOn.darker(darkFactor);
-    QColor yellowOn = yellowCol;
+    QColor yellowOn = yellowCol.darker(qq);
     QColor yellowOff = yellowOn.darker(darkFactor);
-    QColor greenOn = greenCol;
+    QColor greenOn = greenCol.darker(qq);
     QColor greenOff = greenOn.darker(darkFactor);
 
     QColor grey(QColor(64,64,64));
@@ -201,7 +206,8 @@ void Gauge::handlePaint(UNUSED QPaintEvent *p,GaugeInternal *widget){
     QPainter painter(widget);
     painter.setRenderHint(QPainter::Antialiasing);
 
-    painter.fillRect(0,0,w,h,Qt::black);
+    painter.fillRect(0,0,w,h,inverse?Qt::white:
+                     Qt::black);
 
     float sweep = 270;
     float tickWidth = 10;
@@ -258,13 +264,16 @@ void Gauge::handlePaint(UNUSED QPaintEvent *p,GaugeInternal *widget){
             else
                 painter.setBrush(on?greenOn:greenOff);
         }
-
-        painter.drawRect(-tickWidth/2,0,tickWidth,tickMaxRadius-tickMinRadius);
-        angle += step;
+        
+        if(!inverse || on){ // off ticks are not drawn in inverse
+            painter.drawRect(-tickWidth/2,0,tickWidth,tickMaxRadius-tickMinRadius);
+            angle += step;
+        }
         painter.restore();
 
         if(showValue){
-            painter.setPen(invalid?grey:Qt::white);
+            painter.setPen(invalid?grey:
+                           (inverse?Qt::black:Qt::white));
             painter.drawText(-100,-50,200,100,Qt::AlignCenter,
                              invalid ? QString("no data") : QString::number(value,'g',4));
         }

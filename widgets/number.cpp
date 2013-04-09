@@ -76,6 +76,7 @@ QWidget(NULL){
     
     QGridLayout *l = (QGridLayout*)parent->layout();
     l->addWidget(this,pos.y,pos.x,pos.h,pos.w);
+    ConfigManager::setStyle(this);
 }
     
 void Number::paintEvent(QPaintEvent *event){
@@ -93,7 +94,7 @@ void Number::paintEvent(QPaintEvent *event){
         main->setStyleSheet("color:gray;");
         main->setText("no data");
     }else{
-        main->setStyleSheet("color:white;");
+        ConfigManager::setStyle(main);
         main->setText(QString::number(value));
     }
 }

@@ -38,6 +38,7 @@ public:
         if(renderer)
             delete renderer;
     }
+    bool inverse;
 
     /// the painter, actually called by an internal widget (which needs to be passed in,
     /// as it's that which is redrawn)

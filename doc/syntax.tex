@@ -94,6 +94,8 @@ There are a number of options:
 is ignored in fullscreen windows;
 \item a `screen' can be set, in which case the system will be scanned for a display of the given
 size and the window placed on that window.
+\item a window can be specified as ``inverse'' --- black on white. This may
+be easier to read in bright light, but looks ugly.
 \end{itemize}
 
 \begin{v}
@@ -102,6 +104,7 @@ windowopt   ::= 'title' string
             |   'fullscreen'
             |   'size' int ',' int
             |   'screen' int ',' int
+            |   'inverse'
 \end{v}
 
 

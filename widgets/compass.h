@@ -32,11 +32,11 @@ public:
     /// if this is false, the value has not been set - it's invalid.
     bool invalid;
     float value; //!< current value
+    bool inverse;
 private:
     QVBoxLayout *layout; //!< the layout
     QWidget *main; //!< the main widget
     QLabel *label; //!< the label
-
     
     /// our link to the variable          
     DataRenderer *renderer;

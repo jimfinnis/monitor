@@ -62,6 +62,13 @@ public:
     
     /// interval between sends of "always send" items
     static float sendInterval;
+    
+    /// if this is true, widgets and styles are black on white
+    static bool inverse;
+    
+    /// set the stylesheet for a widget given whether we are inverse
+    /// or not.
+    static void setStyle(QWidget *w);
 };
 
 

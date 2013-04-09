@@ -31,6 +31,8 @@ int ConfigManager::udpSendPort = 33333;
 char ConfigManager::udpSendAddr[256];
 float ConfigManager::sendInterval = 2;
 
+bool ConfigManager::inverse=false;
+
 
 /// a structure to hold variable names and types for linkage
 struct LinkedVarEntry {
@@ -278,6 +280,9 @@ static void parseWindow(){
     char title[256];
     title[0]=0;
     
+    // set this window to not inverse
+    ConfigManager::inverse=false;
+    
     // get window options
     bool done = false;
     while(!done){
@@ -287,6 +292,9 @@ static void parseWindow(){
             break;
         case T_TITLE:
             tok.getnextstring(title);
+            break;
+        case T_INVERSE:
+            ConfigManager::inverse=true;
             break;
         case T_FULLSCREEN:
             fullScreen = true;
@@ -306,7 +314,7 @@ static void parseWindow(){
         
     // create a window
     QMainWindow *w = getApp()->createWindow();
-    w->setStyleSheet("background-color: black; color:white;");
+    ConfigManager::setStyle(w);
     // and parse the contents
     parseContainer(w->centralWidget());
     
@@ -476,3 +484,11 @@ QColor ConfigManager::parseColour(QColor deflt){
         throw UnexpException(&tok,"colour name or \"#rgb\"");
     }
 }
+
+
+void ConfigManager::setStyle(QWidget *w){
+    if(inverse)
+        w->setStyleSheet("background-color: white; color:black;");
+    else
+        w->setStyleSheet("background-color: black; color:white;");
+}    

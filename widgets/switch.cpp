@@ -149,6 +149,7 @@ void Switch::handlePaint(UNUSED QPaintEvent *p,SwitchInternal *widget){
     QPainter painter(widget);
     painter.setRenderHint(QPainter::Antialiasing);
     
+    
     QColor col = value ? Qt::green : Qt::red;
     
     float switchWidth = h*0.5;
@@ -180,6 +181,7 @@ void Switch::handlePaint(UNUSED QPaintEvent *p,SwitchInternal *widget){
     if(!value)
         yoffset=h/2;
     
+    painter.fillRect(w/2-switchWidth/2,0,switchWidth,h,QBrush(Qt::black));
     painter.fillRect(w/2-switchWidth/2,yoffset,switchWidth,h/2,brush);
     painter.setBrush(Qt::NoBrush);
     painter.drawRect(w/2-switchWidth/2,0,switchWidth,h);

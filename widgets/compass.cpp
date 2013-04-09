@@ -34,6 +34,7 @@ QWidget(NULL){
     pos.x = -1;
     
     bool done = false;
+    inverse = ConfigManager::inverse;
     
     pos = ConfigManager::parseRect();
     t->getnextcheck(T_OCURLY);

@@ -72,6 +72,7 @@ public:
     double pixPerSec; //!< pixels per second on x axis, used in rendering, calculated from widthInSeconds
     double widthInSeconds; //!< set by user
     
+    bool inverse;
     /// how many items
     int getItemCount(){
         return renderers.count();

@@ -30,15 +30,11 @@ void Graph::paintEvent(QPaintEvent *event){
     // create a backing store onto which we draw, to make sure
     // that we have all blend modes available
     QImage image(width(),height(),QImage::Format_RGB32);
-    image.fill(0);
+    image.fill(inverse?0xffffffff:0);
     
     // create a painter on that image
     QPainter painter(&image);
     
-    
-    // this doesn't work on a lot of systems; we'd probably have to
-    // refactor with a QImage backing the data or something.
-    painter.setCompositionMode(QPainter::CompositionMode_Plus);
     
     QFont font("Sans",8,QFont::Normal);
     painter.setFont(font);
@@ -64,6 +60,7 @@ Graph::Graph(QWidget *parent,Tokeniser *t) : QWidget(NULL){
     bool done = false;
     
     pos = ConfigManager::parseRect();
+    inverse = ConfigManager::inverse;
     
     t->getnextcheck(T_OCURLY);
     widthInSeconds = DEFAULTWIDTHINSECONDS;
@@ -96,14 +93,16 @@ Graph::Graph(QWidget *parent,Tokeniser *t) : QWidget(NULL){
      
     QGridLayout *l = (QGridLayout*)parent->layout();
     l->addWidget(this,pos.y,pos.x,pos.h,pos.w);
+    
+    ConfigManager::setStyle(this);
 }
 
 // parse a float var after the "var x {" point
 GraphFloatRenderer::GraphFloatRenderer(Graph *g,DataBuffer<float> *b,Tokeniser *t) :
 DataRenderer(g,b){
     bool done = false;
-    color = QColor(Qt::white);
-    width = 1;
+    color = QColor(g->inverse?Qt::black:Qt::white);
+    width = g->inverse?3:1;
     while(!done){
         switch(t->getnext()){
         case T_WIDTH:
@@ -147,7 +146,9 @@ void GraphFloatRenderer::render(int idx,Graph *g,QPainter &painter){
     int legendy = 10+metrics.height()*idx;
     QRectF rect(110,legendy,w,metrics.height());
     
-    painter.setPen(QPen(Qt::white));
+    painter.setPen(QPen(g->inverse?
+                        Qt::black:
+                        Qt::white));
     painter.drawText(rect,Qt::AlignLeft,legend);
     
     QPen pen(color);
@@ -156,6 +157,8 @@ void GraphFloatRenderer::render(int idx,Graph *g,QPainter &painter){
     
     painter.drawLine(10,legendy+10,100,legendy+10);
     
+    if(!g->inverse)
+        painter.setCompositionMode(QPainter::CompositionMode_Plus);
     for(;;){
         Datum<float> *d = buf->read(n++);
         if(!d)break;
@@ -176,6 +179,6 @@ void GraphFloatRenderer::render(int idx,Graph *g,QPainter &painter){
         prevx=x;
         prevTime=d->t;
     }
-    
+    painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
     
 }

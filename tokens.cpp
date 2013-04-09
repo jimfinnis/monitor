@@ -28,6 +28,7 @@ TokenRegistry tokens[] = {
 	{"centred", T_CENTRED},
 	{"centered", T_CENTERED},
 	{"max", T_MAX},
+	{"inverse", T_INVERSE},
 	{"gauge", T_GAUGE},
 	{"levels", T_LEVELS},
 	{"number", T_NUMBER},
