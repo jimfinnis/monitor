@@ -57,7 +57,7 @@ public:
     
     
     /// parse the configuration details for a Switch and construct it
-    Switch(const char *frameName,Tokeniser *t);
+    Switch(QWidget *parent,Tokeniser *t);
     
     /// toggle the switch, update the time changed and send the data.
     void toggle();
@@ -69,7 +69,7 @@ private:
     
     bool value; //!< the value of the toggle
     OutValue *out; //!< the output value
-    
+    bool immediate; //!< if true, sent data immediately, else wait for next interval tick.
     
     /// our link to the variable - optional, for when the switch has
     /// feedback.

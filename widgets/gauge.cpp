@@ -13,7 +13,6 @@
 #include "../config.h"
 #include "../exception.h"
 #include "../datamgr.h"
-#include "../widgetmgr.h"
 #include "../tokens.h"
 
 static QColor defaultGreenCol(0,255,0);
@@ -21,7 +20,7 @@ static QColor defaultRedCol(255,0,0);
 static QColor defaultYellowCol(255,255,0);
 static int defaultDarkFactor = 400;
 
-Gauge::Gauge(const char *frameName,Tokeniser *t) :
+Gauge::Gauge(QWidget *parent,Tokeniser *t) :
     QWidget(NULL)
 {
     value = 0;
@@ -36,6 +35,8 @@ Gauge::Gauge(const char *frameName,Tokeniser *t) :
     
     bool done = false;
 
+    pos = ConfigManager::parseRect();
+    
     t->getnextcheck(T_OCURLY);
     
     DataBuffer<float> *buf=NULL;
@@ -57,9 +58,6 @@ Gauge::Gauge(const char *frameName,Tokeniser *t) :
     
     while(!done){
         switch(t->getnext()){
-        case T_POS:
-            pos = ConfigManager::parseRect();
-            break;
         case T_EXPR:
         case T_VAR:
             t->rewind();
@@ -124,11 +122,6 @@ Gauge::Gauge(const char *frameName,Tokeniser *t) :
         }
     }
     
-    
-    
-    if(!pos.isset())
-        throw Exception("no position given for gauge");
-    
     if(!buf)
         throw Exception("no data source given for gauge");
     
@@ -137,10 +130,10 @@ Gauge::Gauge(const char *frameName,Tokeniser *t) :
     
     layout = new QVBoxLayout(this);
     layout->setSpacing(0);
+    layout->setContentsMargins(0,0,0,0);
     main = new GaugeInternal(this);
     label = new QLabel(title);
     label->setAlignment(Qt::AlignCenter);
-    label->setMaximumSize(10000,40);
     if(subtitle[0]){
         label2 = new QLabel(subtitle);
         label2->setMaximumSize(10000,40);
@@ -149,17 +142,23 @@ Gauge::Gauge(const char *frameName,Tokeniser *t) :
     }else label2=NULL;
     
 
-    main->setMinimumSize(100,100);
+    main->setMinimumSize(50,50);
+    label->setMaximumSize(10000,20);
     layout->addWidget(main);
     layout->addWidget(label);
     if(label2)
         layout->addWidget(label2);
     setLayout(layout);
     
-    renderer = new DataRenderer(main,buf);
-
-    WidgetManager::addWidget(frameName,this,pos.x,pos.y,pos.w,pos.h);
+    label->setContentsMargins(0,0,0,0);
+    main->setContentsMargins(0,0,0,0);
+    setContentsMargins(0,0,0,0);
+    layout->setContentsMargins(0,0,0,0);
     
+    renderer = new DataRenderer(main,buf);
+    
+    QGridLayout *l = (QGridLayout*)parent->layout();
+    l->addWidget(this,pos.y,pos.x,pos.h,pos.w);
 }
 
 void GaugeInternal::paintEvent(QPaintEvent *event){

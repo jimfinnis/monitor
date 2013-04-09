@@ -1,99 +1,183 @@
-var float actual1 100 range -2500 to 2500,
-    float actual2 100 range -2500 to 2500,
-    float actual3 100 range -2500 to 2500,
-    float actual4 100 range -2500 to 2500,
-    float actual5 100 range -2500 to 2500,
-    float actual6 100 range -2500 to 2500,
-    float req1 100 range -2500 to 2500,
-    float req2 100 range -2500 to 2500,
-    float req3 100 range -2500 to 2500,
-    float req4 100 range -2500 to 2500,
-    float req5 100 range -2500 to 2500,
-    float req6 100 range -2500 to 2500,
-    float lift1 100 range -20 to 20,
-    float lift2 100 range -20 to 20,
-    float lift3 100 range -20 to 20,
-    float lift4 100 range -20 to 20,
-    float lift5 100 range -20 to 20,
-    float lift6 100 range -20 to 20,
-    float steer1 100 range -60 to 60,
-    float steer2 100 range -60 to 60,
-    float steer3 100 range -60 to 60,
-    float steer4 100 range -60 to 60,
-    float steer5 100 range -60 to 60,
-    float steer6 100 range -60 to 60,
-    float current1 100 range 0 to 100,
-    float current2 100 range 0 to 100,
-    float current3 100 range 0 to 100,
-    float current4 100 range 0 to 100,
-    float current5 100 range 0 to 100,
-    float current6 100 range 0 to 100,
-    float temp1 1000 range 2 to 15,
-    float temp2 1000 range 2 to 15,
-    float temp3 1000 range 2 to 15,
-    float temp4 1000 range 2 to 15,
-    float temp5 1000 range 2 to 15,
-    float temp6 1000 range 2 to 15,
-    float temp7 1000 range 2 to 15,
-    float temp8 1000 range 2 to 15,
-    float temp9 1000 range 2 to 15,
+#monitor
+var {
+    float actual1 100 range -2500 to 2500
+    float actual2 100 range -2500 to 2500
+    float actual3 100 range -2500 to 2500
+    float actual4 100 range -2500 to 2500
+    float actual5 100 range -2500 to 2500
+    float actual6 100 range -2500 to 2500
+    float ptime 10 range 0 to 100000
+    float req1 100 range -2500 to 2500
+    float req2 100 range -2500 to 2500
+    float req3 100 range -2500 to 2500
+    float req4 100 range -2500 to 2500
+    float req5 100 range -2500 to 2500
+    float req6 100 range -2500 to 2500
+    float lift1 100 range -20 to 20
+    float lift2 100 range -20 to 20
+    float lift3 100 range -20 to 20
+    float lift4 100 range -20 to 20
+    float lift5 100 range -20 to 20
+    float lift6 100 range -20 to 20
+    float steer1 100 range -60 to 60
+    float steer2 100 range -60 to 60
+    float steer3 100 range -60 to 60
+    float steer4 100 range -60 to 60
+    float steer5 100 range -60 to 60
+    float steer6 100 range -60 to 60
+    float current1 100 range 0 to 100
+    float current2 100 range 0 to 100
+    float current3 100 range 0 to 100
+    float current4 100 range 0 to 100
+    float current5 100 range 0 to 100
+    float current6 100 range 0 to 100
+    float temp1 10000 range 2 to 20
+    float temp2 10000 range 2 to 20
+    float temp3 10000 range 2 to 20
+    float temp4 10000 range 2 to 20
+    float temp5 10000 range 2 to 20
+    float temp6 10000 range 2 to 20
+    float temp7 10000 range 2 to 20
+    float temp8 10000 range 2 to 20
+    float temp9 10000 range 2 to 20
     
-    float dist 1000  range 0 to 10000
-
-frame mapframe {
-    gauge { pos 0,0 var req1 }
-    gauge { pos 1,0 var req3 }
-    gauge { pos 2,0 var req5 }
-    gauge { pos 0,1 var req2 }
-    gauge { pos 1,1 var req4 }
-    gauge { pos 2,1 var req6 }
+    float h1 10000 range 0 to 1
+    float h2 10000 range 0 to 1
+    float h3 10000 range 0 to 1
+    float h4 10000 range 0 to 1
+    float h5 10000 range 0 to 1
+    float h6 10000 range 0 to 1
+    
+    float dist 10000  range 0 to 10000
 }
 
-frame right {
-    gauge { pos 0,0 var steer1}
-    gauge { pos 1,0 var steer3}
-    gauge { pos 2,0 var steer5}
-    gauge { pos 0,1 var steer2}
-    gauge { pos 1,1 var steer4}
-    gauge { pos 2,1 var steer6}
-
-    gauge { pos 3,0 var lift1}
-    gauge { pos 4,0 var lift3}
-    gauge { pos 5,0 var lift5}
-    gauge { pos 3,1 var lift2}
-    gauge { pos 4,1 var lift4}
-    gauge { pos 5,1 var lift6}
-
-
-}
-
-
-
-frame bottom {
-
-    gauge { pos 0,0 var current1}
-    gauge { pos 1,0 var current2}
-    gauge { pos 2,0 var current3}
-    gauge { pos 0,1 var current4}
-    gauge { pos 1,1 var current5}
-    gauge { pos 2,1 var current6}
-
-    graph {
-        pos 3,0,    4,2
-        time 300
-        var temp1 { col red width 2}
-        var temp2 { col red width 3}
-        var temp3 { col red width 1}
+window {
+    
+    
+    frame 0,0 {
+        gauge 0,0 { var req1 }
+        gauge 1,0 { var req3 }
+        gauge 2,0 { var req5 }
+        gauge 0,1 { var req2 }
+        gauge 1,1 { var req4 }
+        gauge 2,1 { var req6 }
         
-        var temp4 { col green width 2}
-        var temp5 { col green width 3}
-        var temp6 { col green width 1}
+        gauge 0,2 { var actual1 }
+        gauge 1,2 { var actual3 }
+        gauge 2,2 { var actual5 }
+        gauge 0,3 { var actual2 }
+        gauge 1,3 { var actual4 }
+        gauge 2,3 { var actual6 }
+    }
+    
+    frame 1,0 spacing 20{
+        frame 0,0 borderless {
+            gauge 0,0 { var steer1}
+            gauge 1,0 { var steer3}
+            gauge 2,0 { var steer5}
+            gauge 0,1 { var steer2}
+            gauge 1,1 { var steer4}
+            gauge 2,1 { var steer6}
+        }
         
-        var temp7 { col blue width 2}
-        var temp8 { col blue width 3}
-        var temp9 { col blue width 1}
+        frame 1,0 borderless {
+            gauge 0,0 { var lift1}
+            gauge 1,0 { var lift3}
+            gauge 2,0 { var lift5}
+            gauge 0,1 { var lift2}
+            gauge 1,1 { var lift4}
+            gauge 2,1 { var lift6}
+        }
+    
+        frame 0,1 borderless {
+            gauge 0,0 { var temp1 subtitle "DS 1" levels 16 17}
+            gauge 1,0 { var temp2 subtitle "DS 2" levels previous}
+            gauge 2,0 { var temp3 subtitle "LL 12" levels previous}
+            gauge 0,1 { var temp4 subtitle "DS 3" levels previous}
+            gauge 1,1 { var temp5 subtitle "DS 4" levels previous}
+            gauge 2,1 { var temp6 subtitle "LL 34" levels previous}
+            gauge 0,2 { var temp7 subtitle "DS 5" levels previous}
+            gauge 1,2 { var temp8 subtitle "DS 6" levels previous}
+            gauge 2,2 { var temp9 subtitle "LL 56" levels previous}
+        }
         
-        var dist { col white }
+        frame 1,1  {
+            number 0,0 { var dist}
+            number 1,0 { var ptime title "log time"}
+    
+            status 1,0,1,2 {
+                size 2,3
+                floatrange {
+                    pos 0,0     title "HOT1"  var temp1
+                    bands
+                    <13     blue
+                    <16     green
+                    <17     yellow
+                    else    red
+                }
+                floatrange {
+                    pos 1,0     title "HOT2"  var temp2 bands previous
+                }
+                floatrange {
+                    pos 0,1     title "HOT3"  var temp4 bands previous
+                }
+                floatrange {
+                    pos 1,1     title "HOT4"  var temp5 bands previous
+                }
+                floatrange {
+                    pos 0,2     title "HOT5"  var temp7 bands previous
+                }
+                floatrange {
+                    pos 1,2     title "HOT6"  var temp8 bands previous
+                }
+            }
+        }
+    }
+
+
+
+    frame 0,1,2,1 {
+
+        gauge 0,0 { var current1}
+        gauge 1,0 { var current2}
+        gauge 2,0 { var current3}
+        gauge 0,1 { var current4}
+        gauge 1,1 { var current5}
+        gauge 2,1 { var current6}
+
+        gauge 3,0 { var h1}
+        gauge 4,0 { var h2}
+        gauge 5,0 { var h3}
+        gauge 3,1 { var h4}
+        gauge 4,1 { var h5}
+        gauge 5,1 { var h6}
+
+        graph 6,0,7,1 {
+            time 1500
+            var temp1 { col red width 2}
+            var temp2 { col red width 3}
+            var temp3 { col red width 1}
+            
+            var temp4 { col green width 2}
+            var temp5 { col green width 3}
+            var temp6 { col green width 1}
+        
+            var temp7 { col blue width 2}
+            var temp8 { col blue width 3}
+            var temp9 { col blue width 1}
+        
+            var dist { col white }
+        }
+        graph 6,1,7,1{
+            time 1500
+            var h1 { col red width 2}
+            var h2 { col red width 3}
+            var h3 { col red width 1}
+        
+            var h4 { col green width 2}
+            var h5 { col green width 3}
+            var h6 { col green width 1}
+        }
     }
 }
 

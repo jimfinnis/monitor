@@ -9,26 +9,27 @@
 
 #include <QPainter>
 #include <QTimer>
+#include <QGridLayout>
 
 #include "../config.h"
 #include "../exception.h"
 #include "../datamgr.h"
-#include "../widgetmgr.h"
 #include "../tokens.h"
 #include "../doubletime.h"
 #include "../udp.h"
 
-Switch::Switch(const char *frameName,Tokeniser *t) :
+Switch::Switch(QWidget *parent,Tokeniser *t) :
 QWidget(NULL)
 {
+    bool always=false;
     value = 0;
     renderer = NULL;
-    
+    immediate =false;
     char outVar[64]; //!< name of the variable to write to
     char title[64];
     title[0]=0;
     
-    ConfigRect pos;
+    ConfigRect pos = ConfigManager::parseRect();
     
     bool done = false;
     
@@ -40,9 +41,6 @@ QWidget(NULL)
     
     while(!done){
         switch(t->getnext()){
-        case T_POS:
-            pos = ConfigManager::parseRect();
-            break;
         case T_EXPR: // optional, provides a 'feedback' value
         case T_VAR:
             t->rewind();
@@ -53,6 +51,12 @@ QWidget(NULL)
             break;
         case T_TITLE:
             t->getnextstring(title);
+            break;
+        case T_ALWAYS:
+            always=true;
+            break;
+        case T_IMMEDIATE:
+            immediate=true;
             break;
         case T_CCURLY:
             done=true;
@@ -65,15 +69,11 @@ QWidget(NULL)
     if(!outVar[0])
         throw Exception("no output name given for switch");
     
-    // create a new outvar - always sent,
-    // init=0.
-    out = new OutValue(outVar);
+    // create a new outvar
+    
+    out = new OutValue(outVar,0,always);
     out->listener=this;
     UDPClient::getInstance()->add(out);
-    
-    
-    if(!pos.isset())
-        throw Exception("no position given for Switch");
     
     if(!title[0])
         strcpy(title,outVar);
@@ -91,10 +91,12 @@ QWidget(NULL)
     setLayout(layout);
     
     renderer = buf ? new DataRenderer(main,buf) : NULL;
-    WidgetManager::addWidget(frameName,this,pos.x,pos.y,pos.w,pos.h);
     
     value = false;
     out->set(value ? 1 : 0);
+    
+    QGridLayout *l = (QGridLayout*)parent->layout();
+    l->addWidget(this,pos.y,pos.x,pos.h,pos.w);
 }
 
 void SwitchInternal::mousePressEvent(QMouseEvent *event)
@@ -188,6 +190,10 @@ void Switch::handlePaint(UNUSED QPaintEvent *p,SwitchInternal *widget){
 void Switch::toggle(){
     value = !value;
     out->set(value ? 1 : 0);
+    /// ensure immediate send
+    if(immediate)
+        UDPClient::getInstance()->update();
+    // graphical update
     update();
 }
     

@@ -13,14 +13,13 @@
 #include "../config.h"
 #include "../exception.h"
 #include "../datamgr.h"
-#include "../widgetmgr.h"
 #include "../tokens.h"
 
 #include "compassPanel.h"
 
 
 
-Compass::Compass(const char *frameName,Tokeniser *t) :
+Compass::Compass(QWidget *parent,Tokeniser *t) :
 QWidget(NULL){
     invalid = true;
     value = 0;
@@ -36,14 +35,12 @@ QWidget(NULL){
     
     bool done = false;
     
+    pos = ConfigManager::parseRect();
     t->getnextcheck(T_OCURLY);
     DataBuffer<float> *b=NULL;
     
     while(!done){
         switch(t->getnext()){
-        case T_POS:
-            pos = ConfigManager::parseRect();
-            break;
         case T_VAR:
         case T_EXPR:
             t->rewind();
@@ -59,10 +56,6 @@ QWidget(NULL){
             throw Exception().set("Unexpected '%s'",t->getstring());
         }
     }
-    
-    if(pos.x < 0)
-        throw Exception("no position given for Compass");
-    
     if(title[0]==0)
         strcpy(title,b->name);
     
@@ -83,7 +76,8 @@ QWidget(NULL){
     
     renderer = new DataRenderer(main,b);
     
-    WidgetManager::addWidget(frameName,this,pos.x,pos.y,pos.w,pos.h);
+    QGridLayout *l = (QGridLayout*)parent->layout();
+    l->addWidget(this,pos.y,pos.x,pos.h,pos.w);
 }
 
 void Compass::paintEvent(QPaintEvent *event){

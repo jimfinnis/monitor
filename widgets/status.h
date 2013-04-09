@@ -80,7 +80,7 @@ class StatusBlockWrapper : public StatusBlock {
 
 public:          
     
-    explicit StatusBlockWrapper(const char *frameName,Tokeniser *tok);
+    explicit StatusBlockWrapper(QWidget *parent,Tokeniser *tok);
     virtual ~StatusBlockWrapper(){}
     
 private:          

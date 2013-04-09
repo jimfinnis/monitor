@@ -25,7 +25,7 @@ public:
     
     
     /// parse the configuration details 
-    Compass(const char *frameName,Tokeniser *t);
+    Compass(QWidget *parent,Tokeniser *t);
     
     virtual void paintEvent(QPaintEvent *e);
 

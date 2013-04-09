@@ -43,7 +43,7 @@ void UDPServer::readPendingDatagrams(){
         quint16 senderPort;
         sock->readDatagram(datagram.data(),datagram.size(),
                            &sender,&senderPort);
-        listener->process(datagram.data(),datagram.size());
+        listener->processUDP(datagram.data(),datagram.size());
     }
 }
 
@@ -66,8 +66,6 @@ OutValue::OutValue(const char *n,float init,bool alw){
 void OutValue::set(float v){
     val = v;
     timeChanged = gettime();
-    // send data
-    UDPClient::getInstance()->update();
 }
 
 UDPClient *UDPClient::instance= NULL;
@@ -85,7 +83,7 @@ void UDPClient::update(){
     if(values.size()==0)return;
     
     foreach(OutValue * const &v, values){
-        if(v->always || v->timeChanged<v->timeSent){
+        if(v->always || v->timeChanged>v->timeSent){
             QTextStream(&s) << " " << v->name << "=" << v->val;
             out.append(s);
             v->timeSent =  gettime();

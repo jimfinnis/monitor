@@ -25,7 +25,7 @@ public:
     
     
     /// parse the configuration details 
-    Number(const char *frameName,Tokeniser *t);
+    Number(QWidget *parent,Tokeniser *t);
     
     virtual void paintEvent(QPaintEvent *e);
 

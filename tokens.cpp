@@ -19,6 +19,7 @@ TokenRegistry tokens[] = {
 	{"else", T_ELSE},
 	{"var", T_VAR},
 	{"expr", T_EXPR},
+	{"window", T_WINDOW},
 	{"frame", T_FRAME},
 	{"linked", T_LINKED},
 	{"float", T_NAMEFLOAT},
@@ -76,5 +77,11 @@ TokenRegistry tokens[] = {
 	{"port", T_PORT},
 	{"sendport", T_SENDPORT},
 	{"sendaddr", T_SENDADDR},
+	{"immediate", T_IMMEDIATE},
+	{"always", T_ALWAYS},
+	{"sendinterval", T_SENDINTERVAL},
+	{"validtime", T_VALIDTIME},
+	{"borderless", T_BORDERLESS},
+	{"spacing", T_SPACING},
 {NULL,-10}
 };

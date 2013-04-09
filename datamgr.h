@@ -21,7 +21,7 @@
 #include <QList>
 #include "exception.h"
 
-#define DATAVALIDINTERVAL 10
+#define DEFAULTDATAVALIDINTERVAL (60*60*24*365*2)
 
 #define UNUSED __attribute__((unused))
 
@@ -42,8 +42,11 @@ private:
     /// "time", the internal time field will be set and used for all subsequent values.
     /// WILL SILENTLY FAIL if a variable is not in any of the internal lists.
     static void write(const char *name,const char *value);
-
+    
 public:
+    /// initialise the datamanager; typically creates the built-in buffers
+    static void init();
+    
     /// Create a new float buffer with the given name, and capable
     /// of containing the given number of items; add it to the internal
     /// map and return it - or return NULL if there was a problem.
@@ -60,13 +63,28 @@ public:
     /// helper function to get the current time including ms.
     static double getTimeNow();
     
-    /// redraw everything
+    /// redraw everything, by sending a message saying that
+    /// all variables have changed. Will NOT result in a UDP resend of output variables;
+    /// they're a separate mechanism.
     static void updateAll();
     
     /// recalculate any expressions which need it, and 
     /// clear the set holding those expressions.
     static void recalcExpressions();
     
+    /// if no data has been received for this number of seconds,
+    /// the data is invalid (isRecent() will return false.)
+    static float dataValidInterval;
+    
+    /// buffer containing intervals between subsequent
+    /// packets
+    static DataBuffer<float> *lastPacketIntervalBuffer;
+    /// buffer containing time since last packet
+    static DataBuffer<float> *timeSinceLastPacketBuffer;
+
+    /// this is the offset between the timestamp on the last packet received and
+    /// the local time at which it was received - it's localtime-packettime.
+    static float packetTimeOffset;
 };
 
 
@@ -79,7 +97,7 @@ template <class T> struct Datum {
     /// true if the data arrived relatively recently
     bool isRecent(){
         double now = DataManager::getTimeNow();
-        return (now - t < DATAVALIDINTERVAL);
+        return (now - t < DataManager::dataValidInterval);
     }
         
 };

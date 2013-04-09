@@ -8,8 +8,8 @@
 
 #include "../config.h"
 #include "../exception.h"
-#include "../widgetmgr.h"
 #include "../tokens.h"
+#include <QGridLayout>
 
 #include "status.h"
 
@@ -28,17 +28,13 @@ public:
 };
 
 
-StatusBlockWrapper::StatusBlockWrapper(const char *frameName,Tokeniser *t):
+StatusBlockWrapper::StatusBlockWrapper(QWidget *parent,Tokeniser *t):
 StatusBlock(NULL){
     bool done=false;
-    t->getnextcheck(T_OCURLY);
-    ConfigRect pos;
     int w=-1,h=-1;
     
-    if(t->getnext()!=T_POS)
-        throw UnexpException(t,"position");
-    pos = ConfigManager::parseRect();
-    
+    ConfigRect pos = ConfigManager::parseRect();
+    t->getnextcheck(T_OCURLY);
     
     if(t->getnext()!=T_SIZE)
         throw UnexpException(t,"size of grid");
@@ -63,8 +59,8 @@ StatusBlock(NULL){
         }
     }
     
-    WidgetManager::addWidget(frameName,this,pos.x,pos.y,pos.w,pos.h);
-    
+    QGridLayout *l = (QGridLayout*)parent->layout();
+    l->addWidget(this,pos.y,pos.x,pos.h,pos.w);
 }
 
 void StatusFloatRangeCell::set(){

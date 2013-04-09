@@ -10,12 +10,12 @@
 #include <sys/time.h>
 #include <QPainter>
 #include <QPaintEvent>
+#include <QGridLayout>
 #include <QImage>
 
 #include "../config.h"
 #include "../exception.h"
 #include "../datamgr.h"
-#include "../widgetmgr.h"
 #include "../tokens.h"
 
 #define DEFAULTWIDTHINSECONDS 30
@@ -23,7 +23,7 @@
 void Graph::paintEvent(QPaintEvent *event){
     double w = width();
 
-    tNow = DataManager::getTimeNow();
+    tNow = DataManager::getTimeNow() - DataManager::packetTimeOffset;
     
     pixPerSec = w/widthInSeconds;
     
@@ -56,12 +56,14 @@ void Graph::paintEvent(QPaintEvent *event){
 }
 
 
-Graph::Graph(const char *frameName,Tokeniser *t) : QWidget(NULL){
+Graph::Graph(QWidget *parent,Tokeniser *t) : QWidget(NULL){
     
     ConfigRect pos;
     pos.x = -1;
     
     bool done = false;
+    
+    pos = ConfigManager::parseRect();
     
     t->getnextcheck(T_OCURLY);
     widthInSeconds = DEFAULTWIDTHINSECONDS;
@@ -69,9 +71,6 @@ Graph::Graph(const char *frameName,Tokeniser *t) : QWidget(NULL){
     
     while(!done){
         switch(t->getnext()){
-        case T_POS:
-            pos = ConfigManager::parseRect();
-            break;
         case T_TIME:
             widthInSeconds=t->getnextfloat();
             break;
@@ -95,7 +94,8 @@ Graph::Graph(const char *frameName,Tokeniser *t) : QWidget(NULL){
     if(pos.x < 0)
         throw Exception("no position given for graph");
      
-    WidgetManager::addWidget(frameName,this,pos.x,pos.y,pos.w,pos.h);
+    QGridLayout *l = (QGridLayout*)parent->layout();
+    l->addWidget(this,pos.y,pos.x,pos.h,pos.w);
 }
 
 // parse a float var after the "var x {" point

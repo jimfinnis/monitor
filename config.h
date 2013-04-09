@@ -59,6 +59,9 @@ public:
     static int udpSendPort;
     /// the host that switches etc. send to (localhost by default)
     static char udpSendAddr[];
+    
+    /// interval between sends of "always send" items
+    static float sendInterval;
 };
 
 

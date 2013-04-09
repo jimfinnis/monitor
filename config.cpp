@@ -5,12 +5,14 @@
 
 #include <QList>
 #include <QString>
+#include <QDesktopWidget>
 #include <QFile>
 
 #include "tokeniser.h"
 #include "tokens.h"
 #include "config.h"
 #include "exception.h"
+#include "app.h"
 
 #include "expr.h"
 
@@ -27,6 +29,8 @@
 int ConfigManager::port = -1;
 int ConfigManager::udpSendPort = 33333;
 char ConfigManager::udpSendAddr[256];
+float ConfigManager::sendInterval = 2;
+
 
 /// a structure to hold variable names and types for linkage
 struct LinkedVarEntry {
@@ -89,6 +93,7 @@ static void parseVars(){
     char buf[256];
     int size,type;
     RawDataBuffer *linkvar,*b;
+    tok.getnextcheck(T_OCURLY);
     for(;;){
         bool autoRange=false;
         float mn=0,mx=0;
@@ -172,49 +177,44 @@ static void parseVars(){
                     linkvar = b;
             }
             break;
+        case T_CCURLY:
+            return;
         default:
             throw UnexpException(&tok);
-        }
-        
-        if(tok.getnext()!=T_COMMA){
-            // exit if no comma!
-            tok.rewind();
-            break;
         }
     }
 }
 
-static void parseFrame(){
-    // get the frame name
-    char frameName[256];
-    tok.getnextident(frameName);
-    
-    tok.getnextcheck(T_OCURLY);
-    
+static void parseFrame(QWidget *parent);
+
+static void parseContainer(QWidget *parent){
     // now start reading widgets
     
     for(;;){
         switch(tok.getnext()){
+        case T_FRAME:
+            parseFrame(parent);
+            break;
         case T_GAUGE:
-            new Gauge(frameName,&tok);
+            new Gauge(parent,&tok);
             break;
         case T_NUMBER:
-            new Number(frameName,&tok);
+            new Number(parent,&tok);
             break;
         case T_COMPASS:
-            new Compass(frameName,&tok);
+            new Compass(parent,&tok);
             break;
         case T_GRAPH:
-            new Graph(frameName,&tok);
+            new Graph(parent,&tok);
             break;
         case T_MAP:
-            new MapWidget(frameName,&tok);
+            new MapWidget(parent,&tok);
             break;
         case T_STATUS:
-            new StatusBlockWrapper(frameName,&tok);
+            new StatusBlockWrapper(parent,&tok);
             break;
         case T_SWITCH:
-            new Switch(frameName,&tok);
+            new Switch(parent,&tok);
             break;
         case T_CCURLY:
             return;
@@ -222,6 +222,67 @@ static void parseFrame(){
             throw UnexpException(&tok,"widget name");
         }
     }
+}
+
+static void parseFrame(QWidget *parent){
+    // first parse the pos block
+    
+    ConfigRect pos = ConfigManager::parseRect();
+    
+    // followed by some optional stuff
+    bool borderless=false;
+    int spacing=0;
+    bool done=false;
+    
+    while(!done){
+        switch(tok.getnext()){
+        case T_BORDERLESS:
+            borderless=true;
+            break;
+        case T_SPACING:
+            spacing=tok.getnextint();
+            break;
+        case T_OCURLY:
+            done = true;
+            break;
+        default:
+            throw UnexpException(&tok,"frame option or {");
+        }
+    }
+    
+    // create frame and layout
+    QFrame *f = new QFrame;
+
+    f->setFrameStyle(borderless?
+                     QFrame::NoFrame:
+                     QFrame::Panel);
+    QGridLayout *l = new QGridLayout;
+    l->setSpacing(spacing);
+    f->setLayout(l);
+    
+    
+    parseContainer(f);
+    
+    // add to the parent's layout
+    ((QGridLayout*)parent->layout())->addWidget(f,pos.y,pos.x,pos.h,pos.w);
+}
+
+static void parseWindow(){
+    tok.getnextcheck(T_OCURLY);
+
+    // create a window
+    QMainWindow *w = getApp()->createWindow();
+    w->setStyleSheet("background-color: black; color:white;");
+    // and parse the contents
+    parseContainer(w->centralWidget());
+    // finally show the window
+    w->showFullScreen();
+    
+    QDesktopWidget dt;
+    QRect r = dt.screenGeometry();
+    r.setX(0);
+    r.setY(0);
+    w->setGeometry(r);
 }
 
 ConfigRect ConfigManager::parseRect(){
@@ -314,8 +375,8 @@ void ConfigManager::parseFile(QString fname){
         case T_VAR:
             parseVars();
             break;
-        case T_FRAME:
-            parseFrame();
+        case T_WINDOW:
+            parseWindow();
             break;
         case T_END:
             done=true;
@@ -328,6 +389,12 @@ void ConfigManager::parseFile(QString fname){
             break;
         case T_SENDADDR:
             tok.getnextstring(udpSendAddr);
+            break;
+        case T_VALIDTIME:
+            DataManager::dataValidInterval = tok.getnextfloat();
+            break;
+        case T_SENDINTERVAL:
+            sendInterval = tok.getnextfloat();
             break;
         default:
             throw UnexpException(&tok,"'var', 'frame' or end of file");

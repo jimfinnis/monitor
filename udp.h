@@ -14,7 +14,7 @@
 
 class UDPListener {
 public:
-    virtual void process(const char *buf,int size)=0;
+    virtual void processUDP(const char *buf,int size)=0;
 };
 
 class UDPServer : public QObject{

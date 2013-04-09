@@ -141,7 +141,7 @@ class MapWidget : public Marble::MarbleWidget{
           
     QList<MapItemRenderer *> renderers;          
 public:
-    explicit MapWidget(const char *frameName,Tokeniser *t);
+    explicit MapWidget(QWidget *parent,Tokeniser *t);
     virtual void customPaint(Marble::GeoPainter *painter);
     void addRenderer(MapItemRenderer *r){
         renderers.append(r);

@@ -44,7 +44,7 @@ public:
     virtual void handlePaint(QPaintEvent *p,GaugeInternal *w);
     
     /// parse the configuration details for a gauge and construct it
-    Gauge(const char *frameName,Tokeniser *t);
+    Gauge(QWidget *parent,Tokeniser *t);
 
 private:
     QVBoxLayout *layout; //!< the layout

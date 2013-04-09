@@ -10,15 +10,15 @@
 #include "../config.h"
 #include "../exception.h"
 #include "../datamgr.h"
-#include "../widgetmgr.h"
 #include "../tokens.h"
 
 #include <QVariant>
+#include <QGridLayout>
 #include <marble/GeoPainter.h>
 
 using namespace Marble;
 
-MapWidget::MapWidget(const char *frameName,Tokeniser *t) :
+MapWidget::MapWidget(QWidget *parent,Tokeniser *t) :
 MarbleWidget((QWidget *)NULL) {
     
     ConfigRect pos;
@@ -35,13 +35,11 @@ MarbleWidget((QWidget *)NULL) {
     setShowCompass(false);
     setShowGrid(false);
     
+            pos = ConfigManager::parseRect();
     t->getnextcheck(T_OCURLY);
     while(!done){
         
         switch(t->getnext()){
-        case T_POS:
-            pos = ConfigManager::parseRect();
-            break;
         case T_POINT:
             {
                 MapItemPointRenderer *r = 
@@ -66,11 +64,9 @@ MarbleWidget((QWidget *)NULL) {
             
         }
     }
-    if(pos.x < 0)
-        throw Exception("no position given for map");
     
-    
-    WidgetManager::addWidget(frameName,this,pos.x,pos.y,pos.w,pos.h);
+    QGridLayout *l = (QGridLayout*)parent->layout();
+    l->addWidget(this,pos.y,pos.x,pos.h,pos.w);
 }
 
 void MapItemRenderer::parseLocation(Tokeniser *t){

@@ -17,6 +17,13 @@
 #include "datamgr.h"
 #include "expr.h"
 
+float DataManager::dataValidInterval=DEFAULTDATAVALIDINTERVAL;
+
+DataBuffer<float> *DataManager::lastPacketIntervalBuffer,
+                    *DataManager::timeSinceLastPacketBuffer;
+
+float DataManager::packetTimeOffset=0;
+
 double DataManager::getTimeNow(){
     // get current time including microseconds
     timeval tv;
@@ -84,14 +91,14 @@ void DataManager::recalcExpressions(){
     expressionsRequiringRecalc.clear();
 }
 
-static double currentTime=0;
+static double packetTime=0;
 
 void writeToBuffer(const char *name,const char *value){
     if(!strcasecmp("time",name)){ //handle time as a special case
-        currentTime = atol(value);
+        packetTime = atof(value);
     } else if(DataBuffer<float> *b = DataManager::findFloatBuffer((name))){
         // it's a float buffer, add it as a float
-        b->write(currentTime,atof(value));
+        b->write(packetTime,atof(value));
         // if this is a linked buffer, we need to check that all the linked buffers were
         // also updated and if not create duplicate entries.
         if(b->isLinked())
@@ -175,6 +182,19 @@ void DataManager::parsePacket(const char *s,int size){
         s+=len+1;
         done+=len+1;
     }
+
+    // calculate packet time offset, the difference between the time on the packet and when
+    // it was received locally
+
+    packetTimeOffset = getTimeNow()-packetTime;
+
+    // write the difference interval between packet times to a special buffer
+    
+    static double lastPacketTime = -1;
+    if(lastPacketTime>=0){
+        lastPacketIntervalBuffer->write(packetTime,packetTime-lastPacketTime);
+    }
+    lastPacketTime = packetTime;
     
     // recalculate any expressions whose variables may have changed
     recalcExpressions();
@@ -231,5 +251,15 @@ void DataManager::updateAll(){
     for(int i=0;i<allVariables.size();i++){
         allVariables[i]->notify();
     }
+    // also update the time since last packet (packetTime is the time of the
+    // last received packet)
+    timeSinceLastPacketBuffer->write(getTimeNow(),
+                                     getTimeNow()-packetTime);
 }
 
+void DataManager::init(){
+    lastPacketIntervalBuffer = createFloatBuffer("lastpacketinterval",1000,0,1);
+    lastPacketIntervalBuffer->setAutoRange();
+    timeSinceLastPacketBuffer = createFloatBuffer("timesincepacket",1000,0,1);
+    timeSinceLastPacketBuffer->setAutoRange();
+}

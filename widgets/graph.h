@@ -65,7 +65,7 @@ public:
     
     
     /// parse the configuration details for a gauge 
-    Graph(const char *frameName,Tokeniser *t);
+    Graph(QWidget *parent,Tokeniser *t);
     
     
     double tNow; //!< current time, used in rendering

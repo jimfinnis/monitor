@@ -6,14 +6,14 @@
 
 QT       += core gui network
 CONFIG  += debug
+LIBS += -lrt
 
 TARGET = monitor
 TEMPLATE = app
 
 SOURCES += main.cpp\
-        mainwindow.cpp \
+    app.cpp\
     datamgr.cpp \
-    widgetmgr.cpp \
     tokens.cpp \
     config.cpp \
     tokeniser.cpp \
@@ -32,10 +32,9 @@ SOURCES += main.cpp\
     widgets/switch.cpp \
     widgets/map.cpp
 
-HEADERS  += mainwindow.h \
+HEADERS  += app.h \
     datamgr.h \
     datarenderer.h \
-    widgetmgr.h \
     qcommandline.h\
     tokens.h \
     config.h \

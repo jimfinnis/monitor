@@ -1,32 +1,47 @@
 \section{Blocks}
-A file consist of blocks, which are either variable blocks
-or frame blocks. A few other settings are specified at this level:
+A file consist of blocks, which are either:
 \begin{itemize}
-\item the port number to receive data from;
-\item the port and address to send output data (e.g. from switches)
-to.
+\item variable blocks, describing the variables expected from the UDP client;
+\item window definitions, describing the windows and the frames and widgets
+they contain;
+\item configuration options.
 \end{itemize}
-
 
 \begin{v}
 file        ::= { block }
 
 block       ::= varblock
-            |   frameblock
-            |   'port' integer
-            |   'sendport' integer
-            |   'sendaddr' integer
-            
+            |   window
+            |   configoption
 \end{v}
 
-
-\todo{Port, sendport and sendaddr configuration. Switches.}
+\subsection{Configuration options}
+These are defined at the top level:
+\begin{itemize}
+\item \textbf{validtime} : if a data buffer has not received data for this long, the data in the buffer is 
+considered to be invalid. This is useful when there is a reasonably good connection and a long wait between updates
+is a symptom of a fault. It is set by default to a very long interval (about two years.)
+\item \textbf{port} : this is the port to which the system should listen for UDP packets --- by default 13231, although
+it can be set with the \verb+-p+ option on the command line, which will override any value set in the configuration file.
+\item \textbf{sendaddr} : this string is a hostname to which UDP control packets can be sent by output widgets, such as 
+switches. By default it is the local host.
+\item \textbf{sendport} : this is the port number for UDP control packets, by default 33333.
+\item \textbf{sendinterval} : the interval between sends of UDP packets for \emph{always send} widgets, by default 2 seconds.
+\end{itemize}
+\begin{v}
+configoption::= 'port' int
+            |   'sendaddr' string
+            |   'sendport' int
+            |   'validtime' float
+            |   'sendinterval' float
+\end{v}
 
 \subsection{Variable blocks}
 Variable blocks describe the variables which arrive on the UDP
-connection, and consist of a list of comma-separated variable definitions.
+connection, and consist of a list of variable definitions surrounded
+by curly brackets\footnote{change from first version, for syntactical orthogonality.}.
 \begin{v}
-varblock    ::= 'var' {vardef ','} vardef
+varblock    ::= 'var' '{' {vardef} '}'
 \end{v}
 Currently only floating point variables are supported.
 Some floating point variables may be \emph{linked.}
@@ -68,37 +83,47 @@ have auto range.
                 | auto
 \end{v}
 
-\subsection{Frame blocks}
-Frame blocks describe the contents of a predefined frame on
-the screen. The name of the frame must be one of the frames set
-up by the C++ code. Each frame block consists of a set of widget
-blocks, contained by curly brackets.
+\subsection{Window blocks}
+Window blocks describe the contents of a window. Currently, there is only one window block, and that covers the whole
+primary display. The contents of a window block are either widgets or frames.
+
 \begin{v}
-frameblock  ::= 'frame' framename '{' {widget} '}'
-
-framename   ::= ident
-
-widget      ::= gauge | number | graph | map | status |
-                compass | switch
+window      ::= 'window' '{' {frame|widget} '}'
 \end{v}
-\clearpage
-\subsection{Widgets}
-All widget specification consist of the widget type followed
-by a widget specification in curly brackets. They always
-contain a position, and usually at least one data source.
+
+\subsection{Frame blocks}
+Frame blocks describe a frame within the window, optionally surrounded by a border, and its contents.
+The frame definition consists of a position (see below) giving the position and size of the frame within its container,
+some options, and then a list of contents in curly brackets --- which can be widgets or more frames, just like for a window.
+\begin{v}
+frameblock  ::= 'frame' pos [{frameopt}] '{' {frame|widget} '}'
+
+frameopt    ::= 'borderless'
+            |   'spacing' int
+
+\end{v}
 
 \subsubsection{Positions}
-Widget positions describe where widgets appear in the frame's
+Positions describe where elements appear in a container's
 grid layout, and how many rows and columns they take up. They
 are either an x,y pair (with an implied width and height) or a full
 x, y, w, h set.
 \begin{v}
-pos         ::= 'pos' x ',' y [ ',' w ',' h ]
+pos         ::=  x ',' y [ ',' w ',' h ]
 
 x           ::= int
 y           ::= int
 w           ::= int
 h           ::= int
+\end{v}
+
+\subsection{Widgets}
+All widget specification consist of the widget type, followed by the position,
+followed by widget specification in curly brackets.
+
+\begin{v}
+widget      ::= gauge | number | graph | map | status |
+                compass | switch
 \end{v}
 
 \subsubsection{Sources}
@@ -143,7 +168,6 @@ the darker the colour. A \emph{previous} value is also accepted.
 \begin{v}
 gauge       ::= 'gauge' pos '{' { gaugemod } '}'
 gaugemod    ::=
-            |   pos
             |   source
             |   'title' string
             |   'subtitle' string
@@ -172,7 +196,7 @@ dangerlevel ::= float
 Number widgets consists of a position, an optional title and
 a source.
 \begin{v}
-number      ::= 'number' '{' pos [ 'title' string ] source '}'
+number      ::= 'number' pos '{' [ 'title' string ] source '}'
 \end{v}
 
 \subsubsection{Graph widgets}
@@ -185,7 +209,7 @@ of graph modifiers in curly brackets, which describe the
 style of line drawn for that source.
 
 \begin{v}
-graph       ::= 'graph' '{' pos [ 'time' float ] { graphsource } '}'
+graph       ::= 'graph' pos '{' [ 'time' float ] { graphsource } '}'
 
 graphsource ::= source '{' { graphmod } '}'
 
@@ -199,7 +223,7 @@ of a screen position, as with other widgets,
 followed by a set of map points or vectors to render.
 
 \begin{v}
-map         ::= 'map' '{' pos { mappoint|mapvector } '}'
+map         ::= 'map' pos '{' { mappoint|mapvector } '}'
 \end{v}
 
 \textbf{Map points} represent data as circles on the map
@@ -267,9 +291,7 @@ and then a set of status indicators, which currently are all
 of type \emph{floatrange.} 
 
 \begin{v}
-status      ::= 'status' '{' 
-                pos
-                pos 
+status      ::= 'status' pos '{' 
                 'size' int ',' int
                 { floatrange }
                '}'
@@ -310,60 +332,69 @@ statcolour  ::= 'red' | 'green' | 'blue' | 'black' | 'yellow'
 The compass widget simply shows a heading. Its source is a value
 in degrees:
 \begin{v}
-compass     ::= 'compass' '{'
-                pos 
+compass     ::= 'compass' pos '{'
                 [ 'title' string ]
                 source
                 '}'
 \end{v}
 
 
-\subsection{Output widgets}
-All widgets so far have been input widgets, showing data
-sent from the remote system to the monitor.
+\subsubsection{Switch}
+The toggle switch is an output widget --- that is, its primary purpose is to
+send data out via a UDP packet. Switches can operate with or without a
+``feedback source.'' If such a source is set, the switch's visible state is
+compared with the value of this source and any mismatch indicated. Without a
+feedback source, the packets are sent from the switch with no indication of
+whether they were successfully received. The actual data sent (and received)
+by the switch are booleans in the form of floats, 0 or 1.
 
-Output widgets allow UDP packets to be sent back from the monitor
-to the rover.
-
-Data is sent to the server specified in \emph{sendaddr} and
-the port specified in \emph{sendport} in the config file, and
-is in the form of key/value pairs, similar to the data sent
-from the remote. A single packet contains all output variables
-due for sending. Variables are due for sending if the time
-at which they were changed is more recent than the last time
-they were sent. This is checked every time the state of an output
-widget is changed, so this will always result in send.
-
-In addition, output variables can be specified as being \emph{always send.}
-Such variables are periodically sent whether they have changed 
-or not (typically every two seconds or so.) This is in case
-UDP packets are dropped. \textbf{This is currently true for all variables.} 
-
-Finally, most output widgets have an optional input source. This
-allows for confirmation of the receipt of an output. The widget
-in this case has three states:
+In non-feedback mode, the switch has two states:
 \begin{itemize}
-\item \textbf{OK} - the widget shows the state sent, and a packet has been
-received since the last send in which the designated source
-matches the output sent.
-\item \textbf{NOACK} - the widget shows ``barberpole'': a packet
-has been sent but no packet has been received containing the designated input source.
-\item \textbf{BADACK} - the widget shows ``error'' (a crosshatch
-pattern) : a packet has been sent, and a packet has been received from
-the designated source, but the two values do not agree.
+\item \textbf{red} corresponds to 0
+\item \textbf{green} corresponds to 1
+\end{itemize}
+In feedback mode, the switch has four states:
+\begin{itemize}
+\item \textbf{red} corresponds to 0 sent and acknowledged;
+\item \textbf{green} corresponds to 1 send and acknowledge;
+\item \textbf{grey} means the value has been changed locally, but has not yet been sent. You can set \emph{immediate} to
+make sure a value is sent immediately on change;
+\item \textbf{diagonal crosshatch} means a value has been sent (indicated by the colour) but a feedback value has
+not yet been received;
+\item \textbf{full crosshatch} means a value has been sent (indicated by the colour) and a feedback value has
+been received, but the two do not match --- an error condition.
+\end{itemize}
+Switch specifications consist of a position, the name of an
+output variable to use in the send packets, a title,
+an an optional feedback source. There may also be the word \verb+always+, in which case the value for this switch
+is always sent, whenever any other output widget changes and when the send interval elapses; and the word `immediate'
+indicating that when the switch is pressed, a UDP send update should be done immediately. This will result in the
+switch's data being sent, as well as any data for other `always' output widgets.
+\begin{v}
+switch      ::= 'switch' pos '{'
+                    'out' ident
+                    'title' string
+                    [ source ]
+                    [ 'always' ]
+                    [ 'immediate' ]
+                '}'
+\end{v}
+
+
+\section{Other notes}
+
+\subsection{How output data is sent}
+Whenever the output update runs, output data is sent for those widgets which are either have changed since the
+last send, or are set to \emph{always send}. The output update is run every \emph{sendinterval} seconds, which defaults
+to 2 seconds but can be set by the configuration file. In addition, widgets set as \emph{immediate} cause the output
+update to run whenever they are changed.
+
+\subsection{Special variables}
+Some variables are created at startup:
+\begin{itemize}
+\item \textbf{timesincepacket} is the number of seconds since the last packet
+was received. It is updated every two seconds or so.
+\item \textbf{lastpacketinterval} is the number of seconds between the last
+packet and the packet before that. It is updated on every packet.
 \end{itemize}
 
-
-\subsubsection{Switch}
-A switch allows a boolean to be output back to the rover. It acts
-as a toggle. The value is actually sent as a float, 0 or 1; and any
-feedback source should be similar. The initial state is false (0.)
-
-\begin{v}
-switch      ::= 'switch' '{'
-                pos
-                [ source ]
-                'out' ident
-                [ 'title' string ]
-                '}'                
-\end{v}

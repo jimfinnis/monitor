@@ -13,11 +13,10 @@
 #include "../config.h"
 #include "../exception.h"
 #include "../datamgr.h"
-#include "../widgetmgr.h"
 #include "../tokens.h"
 
 
-Number::Number(const char *frameName,Tokeniser *t) :
+Number::Number(QWidget *parent,Tokeniser *t) :
 QWidget(NULL){
     invalid = true;
     value = 0;
@@ -28,8 +27,7 @@ QWidget(NULL){
     char title[64];
     title[0]=0;
     
-    ConfigRect pos;
-    pos.x = -1;
+    ConfigRect pos = ConfigManager::parseRect();
     
     bool done = false;
 
@@ -38,9 +36,6 @@ QWidget(NULL){
 
     while(!done){
         switch(t->getnext()){
-        case T_POS:
-            pos = ConfigManager::parseRect();
-            break;
         case T_VAR:
         case T_EXPR:
             t->rewind();
@@ -56,9 +51,6 @@ QWidget(NULL){
             throw Exception().set("Unexpected '%s'",t->getstring());
         }
     }
-    
-    if(pos.x < 0)
-        throw Exception("no position given for number");
     
     if(title[0]==0)
         strcpy(title,b->name);
@@ -81,8 +73,9 @@ QWidget(NULL){
         throw Exception("no data source given");
     
     renderer = new DataRenderer(main,b);
-
-    WidgetManager::addWidget(frameName,this,pos.x,pos.y,pos.w,pos.h);
+    
+    QGridLayout *l = (QGridLayout*)parent->layout();
+    l->addWidget(this,pos.y,pos.x,pos.h,pos.w);
 }
     
 void Number::paintEvent(QPaintEvent *event){

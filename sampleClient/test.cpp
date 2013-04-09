@@ -32,7 +32,6 @@ float *heat;
 
 void runsim(double t){
     udpwrite("a=%f heat=%f",a,*heat);
-    
     a += warming; //temperature coming in
     a += *heat*0.04; // extra heat
     a *= tdecay; // temperature going out
@@ -71,7 +70,7 @@ int main(int argc,char *argv[]){
     
     printf("outport is %d, inport is %d\n",outport,inport);
     for(;;){
-        usleep(30000);
+        usleep(300000);
         s.update();
         runsim(gettime());
     }
