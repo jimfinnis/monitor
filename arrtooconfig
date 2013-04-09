@@ -1,0 +1,125 @@
+#monitor
+port 4321
+
+#
+# First there's a block of variable declarations. There
+# should be one of these for each key which appears in the
+# data stream, except for "time".
+
+# These are separated by commas.
+
+var {
+    # Currently only float values are supported - we can emulate
+    # others with these.
+    
+    # "a" is a variable with range -1 to 1. We'll store 100 values
+    # for it in a cyclic buffer, so we can graph 100 values back.
+    
+    float temp 100 range -5 to 35
+    float tds 100 range 0 to 1
+    float sal 100 range 0 to 2
+    float chl 100 range 0 to 50
+    float tur 100 range -5 to 5
+    float odop 100 range 0 to 100
+    
+    float heading 100 range 0 to 359
+
+    # Similarly, "b" is a 100-long buffer which takes values from -1
+    # to 1.
+
+    float speed 10000 range 0 to 10
+    
+    # "lat" and "lon" should always be considered to be a pair,
+    # so we link them - if a lat ever arrives without a lon, a
+    # lon will be created at the same time with the same value
+    # it had previously.
+    # Lat has range -90 to 90, lon has range -180 to 180
+    # Being linked, they have the same buffer size - 1000 values.
+    
+    linked (
+    float lat range -90 to 90,
+    float lon range -180 to 180) 1000
+}
+    
+# That's the variables, now we can define the widgets.
+
+# the only display (currently)
+window {
+    
+    # top left
+    frame 0,0,20,1 {
+        map 0,0 {
+            point {
+                # For this point renderer,
+                # we render points at lat,lon, with a new point
+                # every time we get a new lat. Note that lat comes first.
+                
+                location var lat,var lon on var lat
+            
+                # we also render 40 of the previous points when new "lat" data arrived.
+            
+                trail 40000
+
+                # var a's range is mapped onto the entire hue range, in which 0 is red
+                # and 1 is back to red again; so a=-1 will be red as will a=1. If you
+                # wanted to do something cleverer, you could use an expression.
+            
+                hue var temp
+            
+                # we map variable b's range (-1 to 1) onto the size range 2-20 pixels
+                # to determine the size of the circle drawn.
+            
+                #sizerange 2 20 var b
+            }
+
+            vector {
+                # we also draw a vector at each point - the same points.            
+                location var lat, var lon on var lat
+            
+                trail 40
+            
+                # the width of the vector is set to 3 pixels
+                width 3
+            
+                # the direction of the vector comes from the expression a*180.
+                degrees var heading
+            
+                # and the vector is black (default is white, for technical reasons)
+                colour black
+            }
+        }
+    }
+
+    frame 20,0,20,1 { # top right
+
+        gauge 0,0 { var speed title "Speed" subtitle "Knots"}
+
+        gauge 0,1 { var temp title "Water Temperature" subtitle "degrees Celcius" }
+        gauge 1,1 { var tds title "Total Dissolved Solids" subtitle "grams/litre" }
+        gauge 2,1 { var sal title "Salinity" subtitle "Parts Per Thousand"}
+        gauge 0,2 { var chl title "Chlorophyll" subtitle "Content micrograms/litre" }
+        gauge 1,2 { var tur title "Turbidity" subtitle "NTU" }
+        gauge 2,2 { var odop title "Dissolved Oxygen" subtitle "%" }
+    
+        compass 1,0 {
+            title "heading"
+            expr "heading" range auto
+        }        
+    } 
+    
+
+    # bottom frame, 2 cols wide
+
+    frame 0,1,40,1 {
+        graph 0,0 {
+            time 100
+            var speed { col red width 2}
+            var temp { col yellow width 2}
+            var tds { col green width 2}
+            var sal { col blue width 2}
+            var chl { col pink width 2}
+            var tur { col white width 2}
+            var odop { col grey width 2}
+        }
+    }
+}
