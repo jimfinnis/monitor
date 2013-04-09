@@ -84,12 +84,26 @@ have auto range.
 \end{v}
 
 \subsection{Window blocks}
-Window blocks describe the contents of a window. Currently, there is only one window block, and that covers the whole
-primary display. The contents of a window block are either widgets or frames.
+Window blocks describe the contents of a window. Windows can appear
+on any display, and can be fullscreen if desired.
+There are a number of options:
+\begin{itemize}
+\item the title of the window can be set;
+\item the window can be set to fullscreen;
+\item the size of the window can be set --- default is as small as possible, and this option
+is ignored in fullscreen windows;
+\item a `screen' can be set, in which case the system will be scanned for a display of the given
+size and the window placed on that window.
+\end{itemize}
 
 \begin{v}
-window      ::= 'window' '{' {frame|widget} '}'
+window      ::= 'window' [ {windowopt} ] '{' {frame|widget} '}'
+windowopt   ::= 'title' string
+            |   'fullscreen'
+            |   'size' int ',' int
+            |   'screen' int ',' int
 \end{v}
+
 
 \subsection{Frame blocks}
 Frame blocks describe a frame within the window, optionally surrounded by a border, and its contents.
@@ -141,8 +155,8 @@ An expression is an infix expression in double quotes consisting of:
 \item the comparison operators \verb+<+ \verb+>+ \verb+>=+ \verb+<=+ 
 \verb+!=+ \verb+=+
 \item the logical negate operator ``!''
+\item the logical operators \verb+&&+ and \verb+||+.
 \end{itemize}
-\todo{Oversight -- no binary logical operators!}
 
 \subsubsection{Gauge widgets}
 A gauge widget consists of the position, followed by any of the following,
@@ -327,6 +341,7 @@ fullbands   ::= { '<' float statcolour }
                 'else' statcolour
 statcolour  ::= 'red' | 'green' | 'blue' | 'black' | 'yellow'
 \end{v}
+\todo{BOOL blocks are missing from the docs}
                
 \subsubsection{Compass}
 The compass widget simply shows a heading. Its source is a value

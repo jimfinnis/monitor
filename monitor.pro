@@ -53,7 +53,7 @@ HEADERS  += app.h \
     widgets/switch.h \
     widgets/map.h
 
-FORMS    += mainwindow.ui
+//FORMS    += mainwindow.ui
 INCLUDEPATH += /usr/include/marble
 
 LIBS += -L/usr/local/lib -lmarblewidget

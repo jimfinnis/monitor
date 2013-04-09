@@ -83,3 +83,5 @@ extern TokenRegistry tokens[];
 #define	T_VALIDTIME	78
 #define	T_BORDERLESS	79
 #define	T_SPACING	80
+#define	T_FULLSCREEN	81
+#define	T_SCREEN	82

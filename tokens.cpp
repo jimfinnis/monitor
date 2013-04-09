@@ -83,5 +83,7 @@ TokenRegistry tokens[] = {
 	{"validtime", T_VALIDTIME},
 	{"borderless", T_BORDERLESS},
 	{"spacing", T_SPACING},
+	{"fullscreen", T_FULLSCREEN},
+	{"screen", T_SCREEN},
 {NULL,-10}
 };

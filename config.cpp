@@ -268,21 +268,77 @@ static void parseFrame(QWidget *parent){
 }
 
 static void parseWindow(){
-    tok.getnextcheck(T_OCURLY);
-
+    // option defaults
+    bool fullScreen = false; // should it be fullscreen?
+    // what size? (default is fit around widgets. Ignored for fullscreen.)
+    int width=-1,height=-1; 
+    // if set, move the window to a screen of the given dimensions
+    int swidth=-1,sheight=-1;
+    // title if any
+    char title[256];
+    title[0]=0;
+    
+    // get window options
+    bool done = false;
+    while(!done){
+        switch(tok.getnext()){
+        case T_OCURLY:
+            done = true;
+            break;
+        case T_TITLE:
+            tok.getnextstring(title);
+            break;
+        case T_FULLSCREEN:
+            fullScreen = true;
+            break;
+        case T_SIZE: // size of window if not fullscreen
+            width = tok.getnextint();
+            tok.getnextcheck(T_COMMA);
+            height = tok.getnextint();
+            break;
+        case T_SCREEN: // move to a screen of given dimensions
+            swidth = tok.getnextint();
+            tok.getnextcheck(T_COMMA);
+            sheight = tok.getnextint();
+            break;
+        }
+    }
+        
     // create a window
     QMainWindow *w = getApp()->createWindow();
     w->setStyleSheet("background-color: black; color:white;");
     // and parse the contents
     parseContainer(w->centralWidget());
-    // finally show the window
-    w->showFullScreen();
     
-    QDesktopWidget dt;
-    QRect r = dt.screenGeometry();
-    r.setX(0);
-    r.setY(0);
-    w->setGeometry(r);
+    if(*title){
+        w->setWindowTitle(title);
+    }
+    
+    // move the window if we want to
+    if(swidth>0){
+        QDesktopWidget *dt = QApplication::desktop();
+        QRect r;
+        int i;
+        for(i=0;i<dt->screenCount();i++){
+            r = dt->screenGeometry(i);
+            printf("Found display : %d x %d\n",r.width(),r.height());
+            if(r.width() == swidth && r.height()==sheight)
+                break;
+        }
+        if(i==dt->screenCount())
+            throw Exception().set("could not find display of %d x %d",swidth,sheight);
+        w->move(r.topLeft());
+    }
+    
+    
+    // finally show the window and resize if required
+    if(fullScreen)
+        w->showFullScreen();
+    else {
+        if(width>0)
+            w->resize(width,height);
+        w->show();
+    }
 }
 
 ConfigRect ConfigManager::parseRect(){
