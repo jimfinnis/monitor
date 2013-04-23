@@ -11,12 +11,16 @@
 #include <QColor>
 #include <QString>
 #include "datamgr.h"
+#include "nudgeable.h"
 
 /// produced by ConfigManager::parseRect() to get widget positions etc.
 struct ConfigRect {
     int x,y,w,h;
+    int minsizex,minsizey;
     ConfigRect(){
         x=-1;// undefined
+        minsizex=60; // default minimum size
+        minsizey=60; // default minimum size
     }
     bool isset(){
         return x>=0;
@@ -37,6 +41,9 @@ public:
     /// parse a location rectangle - either just x,y with implied width and
     /// height of 1,1, or a full x,y,w,h.
     static ConfigRect parseRect();
+    
+    /// parse a nudge type
+    static NudgeType parseNudgeType();
     
     /// parse a float variable or expression: it's one of:
     /// -  var foo
@@ -63,12 +70,20 @@ public:
     /// interval between sends of "always send" items
     static float sendInterval;
     
+    /// interval between successive mandatory graphical updates (ms)
+    static int graphicalUpdateInterval;
+    
     /// if this is true, widgets and styles are black on white
     static bool inverse;
     
     /// set the stylesheet for a widget given whether we are inverse
     /// or not.
     static void setStyle(QWidget *w);
+    
+    /// find a widget by name, so we can reference it for nudging etc.
+    static Nudgeable *getNudgeable(const char *name);
+    
+    static void registerNudgeable(const char *name,Nudgeable *n);
 };
 
 

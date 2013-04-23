@@ -6,9 +6,11 @@
 
 
 #include <QtGui/QApplication>
-#include <QMainWindow>
 #include <QGridLayout>
+#include <QHash>
+#include "window.h"
 #include "udp.h"
+#include "keyhandler.h"
 
 #ifndef __APP_H
 #define __APP_H
@@ -33,15 +35,20 @@ public:
     /// add it to the application. Returns the window;
     /// you can call centralWidget()->layout() to get the layout.
     
-    QMainWindow *createWindow();
+    Window *createWindow();
     
     explicit Application(int argc,char *argv[]);
-    virtual void processUDP(const char *s,int size);
+    virtual void processUDP(char *s,int size);
     
     ~Application();
     
+    /// handle a key press in any window
+    void keyPress(int key);
+    void setKey(const char *keyname, KeyHandler *h);
 private:
     class UDPServer *udpServer;
+    /// a list of keycode->widget mappings, used by keyPress.
+    QHash<int,KeyHandler *>keyHandlers;
 };
 
 /// get a pointer to the Application instance

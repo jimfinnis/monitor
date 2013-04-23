@@ -62,7 +62,7 @@ QWidget(NULL){
     label->setAlignment(Qt::AlignCenter);
     label->setMaximumSize(10000,30);
 
-    main->setMinimumSize(100,10);
+    main->setMinimumSize(pos.minsizex,pos.minsizey);
     layout->addWidget(main);
     layout->addWidget(label);
     setLayout(layout);

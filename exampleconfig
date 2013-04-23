@@ -1,5 +1,9 @@
 #monitor
-#
+
+# uncomment these to change the ports on which the system listens and sends
+#port 33333
+#sendport 33334
+
 # First there's a block of variable declarations. There
 # should be one of these for each key which appears in the
 # data stream, except for "time".
@@ -36,7 +40,7 @@ var {
 # We set up a window (there can only be one, currently) with three
 # frames
 
-window {
+window fullscreen {
     # this frame is at 0,0 (top left) and is 1x1 (the default size)
     
     frame 0,0 {
@@ -88,7 +92,7 @@ window {
                 var b
                 bands previous
             }
-         
+            
             # bool requires a boolean expression source,
             # which is actually a float in the range -1 to 1 (although
             # you can specify "range auto".)  

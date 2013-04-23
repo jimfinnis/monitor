@@ -66,6 +66,7 @@ MarbleWidget((QWidget *)NULL) {
     }
     
     QGridLayout *l = (QGridLayout*)parent->layout();
+    setMinimumSize(pos.minsizex,pos.minsizey);
     l->addWidget(this,pos.y,pos.x,pos.h,pos.w);
 }
 

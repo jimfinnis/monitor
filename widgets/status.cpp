@@ -59,6 +59,7 @@ StatusBlock(NULL){
         }
     }
     
+    setMinimumSize(pos.minsizex,pos.minsizey);
     QGridLayout *l = (QGridLayout*)parent->layout();
     l->addWidget(this,pos.y,pos.x,pos.h,pos.w);
 }

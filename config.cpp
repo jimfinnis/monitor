@@ -23,6 +23,8 @@
 #include "widgets/number.h"
 #include "widgets/map.h"
 #include "widgets/switch.h"
+#include "widgets/momentary.h"
+#include "widgets/slider.h"
 
 #include "datamgr.h"
 
@@ -30,8 +32,10 @@ int ConfigManager::port = -1;
 int ConfigManager::udpSendPort = 33333;
 char ConfigManager::udpSendAddr[256];
 float ConfigManager::sendInterval = 2;
+int ConfigManager::graphicalUpdateInterval=2000;
 
 bool ConfigManager::inverse=false;
+
 
 
 /// a structure to hold variable names and types for linkage
@@ -50,6 +54,8 @@ struct LinkedVarEntry {
 
 /// used to hold a list of linked var names
 static QList<LinkedVarEntry> linkedVars;
+
+
 
 /// tokeniser object
 static Tokeniser tok;
@@ -218,6 +224,12 @@ static void parseContainer(QWidget *parent){
         case T_SWITCH:
             new Switch(parent,&tok);
             break;
+        case T_MOMENTARY:
+            new Momentary(parent,&tok);
+            break;
+        case T_SLIDER:
+            new Slider(parent,&tok);
+            break;
         case T_CCURLY:
             return;
         default:
@@ -233,7 +245,7 @@ static void parseFrame(QWidget *parent){
     
     // followed by some optional stuff
     bool borderless=false;
-    int spacing=0;
+    int spacing=2;
     bool done=false;
     
     while(!done){
@@ -362,6 +374,16 @@ ConfigRect ConfigManager::parseRect(){
         tok.rewind();
         r.w = 1; r.h = 1;
     }
+    if(tok.getnext() == T_SIZE){
+        r.minsizex = tok.getnextint();
+        if(tok.getnext()==T_COMMA){
+            r.minsizey = tok.getnextint();
+        }else{
+            r.minsizey = r.minsizex;
+            tok.rewind();
+        }
+    }else
+        tok.rewind();
     return r;
 }
 
@@ -460,6 +482,9 @@ void ConfigManager::parseFile(QString fname){
         case T_SENDINTERVAL:
             sendInterval = tok.getnextfloat();
             break;
+        case T_UPDATEINTERVAL:
+            graphicalUpdateInterval = tok.getnextfloat()*1000;
+            break;
         default:
             throw UnexpException(&tok,"'var', 'frame' or end of file");
         }
@@ -485,6 +510,22 @@ QColor ConfigManager::parseColour(QColor deflt){
     }
 }
 
+NudgeType ConfigManager::parseNudgeType(){
+    switch(tok.getnext()){
+    case T_UP:
+        return UP;
+    case T_DOWN:
+        return DOWN;
+    case T_MIN:
+        return MIN;
+    case T_MAX:
+        return MAX;
+    case T_CENTRE:
+        return CENTRE;
+    default:
+        throw UnexpException(&tok,"nudge type (up, down, centre)");
+    }
+}
 
 void ConfigManager::setStyle(QWidget *w){
     if(inverse)
@@ -492,3 +533,21 @@ void ConfigManager::setStyle(QWidget *w){
     else
         w->setStyleSheet("background-color: black; color:white;");
 }    
+
+/// set of 'nudgeable' widgets
+static QHash<QString,Nudgeable *> nudgeables;
+
+Nudgeable *ConfigManager::getNudgeable(const char *name){
+    QString key(name);
+    if(nudgeables.contains(key))
+        return nudgeables.value(key);
+    else
+        throw Exception().set("undefined widget '%s'",name);
+}
+
+void ConfigManager::registerNudgeable(const char *name,Nudgeable *n){
+    QString key(name);
+    if(nudgeables.contains(key))
+        throw Exception().set("widget '%s' already defined",name);
+    nudgeables.insert(key,n);
+}

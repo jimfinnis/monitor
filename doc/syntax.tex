@@ -27,6 +27,7 @@ it can be set with the \verb+-p+ option on the command line, which will override
 switches. By default it is the local host.
 \item \textbf{sendport} : this is the port number for UDP control packets, by default 33333.
 \item \textbf{sendinterval} : the interval between sends of UDP packets for \emph{always send} widgets, by default 2 seconds.
+\item \textbf{updateinterval} : the time between ticks at which all graphics are updated, by default 2 seconds.
 \end{itemize}
 \begin{v}
 configoption::= 'port' int
@@ -34,6 +35,7 @@ configoption::= 'port' int
             |   'sendport' int
             |   'validtime' float
             |   'sendinterval' float
+            |   'updateinterval' float
 \end{v}
 
 \subsection{Variable blocks}
@@ -125,14 +127,22 @@ Positions describe where elements appear in a container's
 grid layout, and how many rows and columns they take up. They
 are either an x,y pair (with an implied width and height) or a full
 x, y, w, h set.
+
+In addition, a position for a widget
+can optionally be followed by a size, giving the \emph{minimum} pixel size of
+the widget in both x and y. If only one number is given, the same value is
+used for both dimensions.
 \begin{v}
-pos         ::=  x ',' y [ ',' w ',' h ]
+pos         ::=  x ',' y [ ',' w ',' h ] [ 'size' minw [ ',' minh ] ]
 
 x           ::= int
 y           ::= int
 w           ::= int
 h           ::= int
+minw        ::= int
+minh        ::= int
 \end{v}
+Minimum size options on frames and windows are ignored.
 
 \subsection{Widgets}
 All widget specification consist of the widget type, followed by the position,
@@ -140,7 +150,7 @@ followed by widget specification in curly brackets.
 
 \begin{v}
 widget      ::= gauge | number | graph | map | status |
-                compass | switch
+                compass | switch | momentary | slider
 \end{v}
 
 \subsubsection{Sources}
@@ -190,6 +200,7 @@ gaugemod    ::=
             |   'subtitle' string
             |   'levels' levelspec
             |   'colours' grcolspec
+            |   'fontscale' float
             |   'darken' (int | 'previous')
 
 levelspec   ::= warnlevel dangerlevel
@@ -374,7 +385,7 @@ In non-feedback mode, the switch has two states:
 In feedback mode, the switch has four states:
 \begin{itemize}
 \item \textbf{red} corresponds to 0 sent and acknowledged;
-\item \textbf{green} corresponds to 1 send and acknowledge;
+\item \textbf{green} corresponds to 1 sent and acknowledged;
 \item \textbf{grey} means the value has been changed locally, but has not yet been sent. You can set \emph{immediate} to
 make sure a value is sent immediately on change;
 \item \textbf{diagonal crosshatch} means a value has been sent (indicated by the colour) but a feedback value has
@@ -391,12 +402,100 @@ switch's data being sent, as well as any data for other `always' output widgets.
 \begin{v}
 switch      ::= 'switch' pos '{'
                     'out' ident
-                    'title' string
+                    [ 'title' string ]
                     [ source ]
                     [ 'always' ]
                     [ 'immediate' ]
+                    [ 'key' keyname ]
                 '}'
 \end{v}
+
+\subsubsection{A note on keys}
+Note that a switch can have a key mapped onto it. The key name is a string (delimited by quotes)
+which is either an ASCII character, or one of the following:
+
+\begin{center}
+\begin{tabular}{llll}
+home & end & pgup & pgdn \\
+ins & del & up & down \\
+left & right & \\
+\end{tabular}
+\end{center}
+
+
+\subsubsection{Momentary}
+A momentary button is an output widget, similar to a switch. It also has a feedback source, in a similar manner to a switch ---
+the button's feedback is valid if it is above 0.5 and the packet setting it arrives after the button was pressed.
+
+Momentary buttons use a similar colour scheme to that of a switch:
+\begin{itemize}
+\item \textbf{green} means the button is ready;
+\item \textbf{red} means the button has recently been pressed and acknowledged,
+and will soon return to the green state (this a purely cosmetic state;)
+\item \textbf{grey} means the button has been pressed, but data has not yet been sent. You can set \emph{immediate} to
+make sure a value is sent immediately on change;
+\item \textbf{diagonal crosshatch} means the press has been sent (indicated by the colour) but a feedback value has
+not yet been received;
+\item \textbf{full crosshatch} means a value has been sent (indicated by the colour) and a feedback value has
+been received, but the two do not match (i.e. the value read is less than 0.5.)
+\end{itemize}
+Another use of momentary buttons is to `nudge' widgets controlling continuous values, such as sliders. Instead of a \emph{out} clause
+with an output
+variable name, the word \emph{nudge} and the name of the output variable of a slider is used, along with an action: \emph{up,}
+\emph{down} and so on. A feedback variable is not permitted with nudge buttons.
+\begin{v}
+switch      ::= 'momentary' pos '{'
+                    ( 'out' ident |
+                      'nudge' name ('up'|'down'|'centre'|'min'|'max') )
+                    [ 'title' string ]
+                    [ source ]
+                    [ 'always' ]
+                    [ 'immediate' ]
+                    [ 'key' keyname ]
+                '}'
+\end{v}
+
+\subsubsection{Slider}
+Sliders are output widgets which control continuous values. They
+work in a similar manner to switches, but the value controlled
+is a floating point value over a specified range.
+
+A feedback source can also be specified, which is compared against
+the value which has been sent. The two values must be within
+a user-configurable epsilon of each other for a match (currently 0.001).
+
+The handle of the slider shows:
+\begin{itemize}
+\item \textbf{white} for OK;
+\item \textbf{grey} means data not yet sent;
+\item \textbf{diagonal crosshatch} means data sent but no acknowledgement;
+\item \textbf{full crosshatch} means data sent, but the received value is not
+yet within epsilon of the sent value. This is not necessarily an error,
+it may take some time for the physical system to catch up.
+\end{itemize}
+See ``Momentary'' for how to create button widgets which can nudge the slider.
+
+It should be noted that \emph{immediate} with a slider works a little
+differently from other widgets: the value will only be sent with the slider
+handle is released. This is to avoid flooding the network with UDP packets as
+the slider moves. However, using a autorepeat keys on a key-mapped momentary
+to nudge a slider which is set to immediate will result in many UDP packets
+being sent!
+
+\begin{v}
+slider      ::= 'slider' pos '{'
+                    'out' ident
+                    'range' float 'to' float
+                    'initial' float
+                    [ 'title' string ]
+                    [ source ]
+                    [ 'always' ]
+                    [ 'immediate' ]
+                    [ 'horizontal' | 'vertical' ]
+                '}'
+\end{v}
+
+
 
 
 \section{Other notes}

@@ -64,10 +64,13 @@ QWidget(NULL){
     layout->setSpacing(0);
     main = new CompassPanel(this);
     label = new QLabel(title);
+    layout->setAlignment(Qt::AlignCenter);
     label->setAlignment(Qt::AlignCenter);
     label->setMaximumSize(10000,30);
     
-    main->setMinimumSize(100,100);
+    float minsize = pos.minsizex<pos.minsizey ? pos.minsizex : pos.minsizey;
+    main->setMinimumSize(minsize,minsize);
+    main->setMaximumSize(minsize,minsize);
     layout->addWidget(main);
     layout->addWidget(label);
     setLayout(layout);

@@ -36,6 +36,7 @@ bool    :   T_NAMEBOOL
 pos     :   T_POS
 centred :   T_CENTRED
 centered :   T_CENTERED
+min     :   T_MIN
 max     :   T_MAX
 inverse :   T_INVERSE
 gauge   :   T_GAUGE
@@ -58,6 +59,7 @@ col     :   T_COL
 color   :   T_COLOR
 colour  :   T_COLOUR
 colours :   T_COLOURS
+updateinterval  :   T_UPDATEINTERVAL
 on      :   T_ON
 point   :   T_POINT
 location:   T_LOCATION
@@ -85,19 +87,28 @@ length  :   T_LENGTH
 widthrange : T_WIDTHRANGE
 lengthrange : T_LENGTHRANGE
 vector  :   T_VECTOR
-
+fontscale: T_FONTSCALE
 port    :   T_PORT
 sendport:   T_SENDPORT
 sendaddr:   T_SENDADDR
 
 immediate:  T_IMMEDIATE
+key : T_KEY
 always: T_ALWAYS
 sendinterval: T_SENDINTERVAL
 validtime: T_VALIDTIME
-
+momentary: T_MOMENTARY
+slider: T_SLIDER
 borderless : T_BORDERLESS
 spacing : T_SPACING
-
+horizontal : T_HORIZONTAL
+vertical : T_VERTICAL
 fullscreen: T_FULLSCREEN
 screen: T_SCREEN
-
+set: T_SET
+epsilon: T_EPSILON
+initial:T_INITIAL
+nudge:T_NUDGE
+up:T_UP
+down:T_DOWN
+centre:T_CENTRE

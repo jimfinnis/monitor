@@ -16,6 +16,7 @@
 #include "datarenderer.h"
 #include "tokeniser.h"
 #include "udp.h"
+#include "keyhandler.h"
 
 /// the internal widget which actually does the toggle switch
 
@@ -38,7 +39,7 @@ private:
 
 /// a toggle switch
 
-class Switch : public QWidget, public UDPClientSendListener {
+class Switch : public QWidget, public UDPClientSendListener, KeyHandler {
     Q_OBJECT
           
 public:
@@ -60,7 +61,7 @@ public:
     Switch(QWidget *parent,Tokeniser *t);
     
     /// toggle the switch, update the time changed and send the data.
-    void toggle();
+    virtual void onKey();
 
 private:
     QVBoxLayout *layout; //!< the layout

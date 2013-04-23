@@ -14,7 +14,7 @@
 
 class UDPListener {
 public:
-    virtual void processUDP(const char *buf,int size)=0;
+    virtual void processUDP(char *buf,int size)=0;
 };
 
 class UDPServer : public QObject{
@@ -45,6 +45,8 @@ public:
  *
  */
 
+
+/// this is implemented by objects which are interested in when a certain value actually gets sent
 
 class UDPClientSendListener {
 public:
@@ -93,6 +95,7 @@ public:
     void setAddress(const char *add, int p){
         port = p;
         addr = QHostAddress(add);
+        printf("Send to %s:%d\n",add,p);
     }
         
     
@@ -105,6 +108,15 @@ public:
     /// always update.
     void update();
     
+};
+
+/// enum used by UDP sending widgets - not all of them use all of these
+enum UDPState {
+    UNSENT, //!< widget changed but data not sent yet
+          UNACK, //!< data sent but no acknowledgement received
+          BADACK, //!< data sent, ack received, but it's not right
+          WAITING, //!< a wait state of some kind
+          OK //!< all is OK.
 };
 
 

@@ -8,6 +8,8 @@
  */
 
 #include <stdio.h>
+#include <string.h>
+#include <ctype.h>
 #include <math.h>
 
 #include <QMessageBox>
@@ -18,6 +20,7 @@
 #include <QVariant>
 
 #include "app.h"
+#include "window.h"
 #include "config.h"
 #include "datamgr.h"
 #include "qcommandline.h"
@@ -65,7 +68,7 @@ Application::Application(int argc,char *argv[]) : QApplication(argc,argv){
     
     QTimer *timer = new QTimer(this);
     connect(timer,SIGNAL(timeout()),this,SLOT(update()));
-    timer->start(2000); // graphical update interval
+    timer->start(ConfigManager::graphicalUpdateInterval); // graphical update interval
     
     // separate timer for UDP send interval
     timer = new QTimer(this);
@@ -81,8 +84,8 @@ Application::Application(int argc,char *argv[]) : QApplication(argc,argv){
     
 }
 
-QMainWindow *Application::createWindow(){
-    QMainWindow *w = new QMainWindow();
+Window *Application::createWindow(){
+    Window *w = new Window();
     // central widget required with a grid layout
     w->setCentralWidget(new QWidget());
     QGridLayout *l = new QGridLayout;
@@ -118,7 +121,7 @@ void Application::fatalError(const QString &details)
     quit();
 }
 
-void Application::processUDP(const char *s,int size){
+void Application::processUDP(char *s,int size){
     DataManager::parsePacket(s,size);
 }
 
@@ -150,3 +153,45 @@ void Application::parseError(const QString& s){
     throw Exception().set("error: %s",s.toLatin1().data());
 }
 
+
+void Application::keyPress(int key){
+    if(keyHandlers.contains(key)){
+        keyHandlers.value(key)->onKey();
+    }
+}
+
+void Application::setKey(const char *keyname, KeyHandler *h){
+    // keyname is either a character like 'a' or '1', or an integer
+    // Qt keycode.
+    
+    int key;
+    if(strlen(keyname)==1)
+        key = toupper(keyname[0]);
+    else if(!strcasecmp(keyname,"home"))
+        key = Qt::Key_Home;
+    else if(!strcasecmp(keyname,"end"))
+        key = Qt::Key_End;
+    else if(!strcasecmp(keyname,"pgup"))
+        key = Qt::Key_PageUp;
+    else if(!strcasecmp(keyname,"pgdn"))
+        key = Qt::Key_PageDown;
+    else if(!strcasecmp(keyname,"ins"))
+        key = Qt::Key_Insert;
+    else if(!strcasecmp(keyname,"del"))
+        key = Qt::Key_Delete;
+    else if(!strcasecmp(keyname,"up"))
+        key = Qt::Key_Up;
+    else if(!strcasecmp(keyname,"down"))
+        key = Qt::Key_Down;
+    else if(!strcasecmp(keyname,"left"))
+        key = Qt::Key_Left;
+    else if(!strcasecmp(keyname,"right"))
+        key = Qt::Key_Right;
+    else key = atoi(keyname);
+    
+    if(keyHandlers.contains(key))
+        throw Exception().set("we already have a handler for key '%c'",key);
+    
+    keyHandlers.insert(key,h);
+}
+    

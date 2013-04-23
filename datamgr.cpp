@@ -165,14 +165,13 @@ static void parseLine(const char *s){
     
 }
 
-void DataManager::parsePacket(const char *s,int size){
+void DataManager::parsePacket(char *s,int size){
     int done=0;
     
-    
+    s[size]=0;
     // the packet is made up of null-terminated lines. Note that the clearLinked.. and checkLinked..
     // calls could be moved out of this loop *if* we can guarantee that the times are all the same
     // for every line.
-    
     while(done<size){
         int len = strlen(s);
         clearLinkedBuffersUsed(); // clear the list of linked buffers used in this packet

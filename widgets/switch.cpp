@@ -17,6 +17,7 @@
 #include "../tokens.h"
 #include "../doubletime.h"
 #include "../udp.h"
+#include "../app.h"
 
 Switch::Switch(QWidget *parent,Tokeniser *t) :
 QWidget(NULL)
@@ -26,8 +27,8 @@ QWidget(NULL)
     renderer = NULL;
     immediate =false;
     char outVar[64]; //!< name of the variable to write to
-    char title[64];
-    title[0]=0;
+    char keyname[64];
+    QString title("");
     
     ConfigRect pos = ConfigManager::parseRect();
     
@@ -49,14 +50,21 @@ QWidget(NULL)
         case T_OUT:
             t->getnextident(outVar);
             break;
-        case T_TITLE:
-            t->getnextstring(title);
+        case T_TITLE:{
+            char buf[256];
+            t->getnextstring(buf);
+            title = QString(buf);
             break;
+        }
         case T_ALWAYS:
             always=true;
             break;
         case T_IMMEDIATE:
             immediate=true;
+            break;
+        case T_KEY:
+            t->getnextstring(keyname);
+            getApp()->setKey(keyname,this);
             break;
         case T_CCURLY:
             done=true;
@@ -75,8 +83,16 @@ QWidget(NULL)
     out->listener=this;
     UDPClient::getInstance()->add(out);
     
-    if(!title[0])
-        strcpy(title,outVar);
+    if(!title.size())
+        title = QString(outVar);
+    
+    if(keyname[0]){
+        QString foo(keyname);
+        foo=foo.toUpper();
+        foo.append(": ");
+        foo.append(title);
+        title = foo;
+    }
     
     layout = new QVBoxLayout(this);
     layout->setSpacing(0);
@@ -85,7 +101,10 @@ QWidget(NULL)
     label->setAlignment(Qt::AlignCenter);
     label->setMaximumSize(10000,30);
     
-    main->setMinimumSize(50,60);
+    if(pos.minsizex < 100)pos.minsizex=100;
+    if(pos.minsizey < 100)pos.minsizey=100;
+    
+    setMinimumSize(pos.minsizex,pos.minsizey);
     layout->addWidget(main);
     layout->addWidget(label);
     setLayout(layout);
@@ -101,8 +120,9 @@ QWidget(NULL)
 
 void SwitchInternal::mousePressEvent(QMouseEvent *event)
 {
-    sw->toggle();
+    sw->onKey();
 }
+
 
 void SwitchInternal::paintEvent(QPaintEvent *event){
     sw->handlePaint(event,this);
@@ -111,12 +131,7 @@ void SwitchInternal::paintEvent(QPaintEvent *event){
 
 void Switch::handlePaint(UNUSED QPaintEvent *p,SwitchInternal *widget){
     
-    enum {
-        UNSENT, //!< switch changed but data unsent
-        NOACK, //!< switch changed, data sent, but has a feedback var and no data yet received
-        BADACK, //!< switch changed, data sent, feedback received but it's wrong!
-        OK //!< switch changed, data sent, feedback ok OR switch changed, data sent and no feedback.
-    } state;
+    UDPState state;
     
     // has data been sent?
     
@@ -124,7 +139,7 @@ void Switch::handlePaint(UNUSED QPaintEvent *p,SwitchInternal *widget){
         state = UNSENT;
     else {
         if(renderer){ // has a feedback variable
-            state = NOACK; // default state - no acknowledgement yet
+            state = UNACK; // default state - no acknowledgement yet
             DataBuffer<float> *b = renderer->getBuffer()->getFloatBuffer();
             
             // get most recent datum
@@ -164,7 +179,7 @@ void Switch::handlePaint(UNUSED QPaintEvent *p,SwitchInternal *widget){
     case UNSENT:
         brush.setColor(QColor(64,64,64));
         break;
-    case NOACK:
+    case UNACK:
         brush.setColor(Qt::white);
         brush.setStyle(Qt::BDiagPattern);
         break;
@@ -174,6 +189,8 @@ void Switch::handlePaint(UNUSED QPaintEvent *p,SwitchInternal *widget){
         break;
     case OK:
         brush.setColor(col);
+        break;
+    case WAITING:
         break;
     }
     
@@ -188,8 +205,7 @@ void Switch::handlePaint(UNUSED QPaintEvent *p,SwitchInternal *widget){
 }
 
 
-
-void Switch::toggle(){
+void Switch::onKey(){
     value = !value;
     out->set(value ? 1 : 0);
     /// ensure immediate send
@@ -198,5 +214,5 @@ void Switch::toggle(){
     // graphical update
     update();
 }
-    
+
         

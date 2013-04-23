@@ -54,6 +54,7 @@ private:
     QLabel *label2; //!< the subtitle
 
     float value; //!< current value
+    float fontScale; //!< display font scale
     
     float redLevel; //!< red start value - 0 to 1
     float yellowLevel; //!< yellow start value - 0 to 1

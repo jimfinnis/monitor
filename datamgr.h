@@ -58,7 +58,8 @@ public:
     /// in the form a=b c=d e=f and parse each line, feeding the results into the write()
     /// method of each buffer mentioned. Once the packet has been parsed, recalculate
     /// any expressions dependent on those buffers.
-    static void parsePacket(const char *s,int size);
+    /// Note - will write a null to s[size] to ensure termination.
+    static void parsePacket(char *s,int size);
     
     /// helper function to get the current time including ms.
     static double getTimeNow();

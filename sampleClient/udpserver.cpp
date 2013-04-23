@@ -63,7 +63,7 @@ void UDPServer::parseLine(const char *s){
     
     char varbuf[256];
     char valbuf[256];
-    
+    printf("   %s\n",s);
     do {
         switch(mode){
         case WAITVAR:
@@ -121,7 +121,8 @@ void UDPServer::update(){
         // either an error or socket disconnected
         return;
     }
-    
+    printf("%d\n",size);
+    buf[size]=0;
     char *s = buf;
     
     int done=0;

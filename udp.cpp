@@ -28,6 +28,7 @@ UDPServer::UDPServer(int port){
     }
     
     connect(sock,SIGNAL(readyRead()),this,SLOT(readPendingDatagrams()));
+    
 }
 
 UDPServer::~UDPServer(){
@@ -66,6 +67,7 @@ OutValue::OutValue(const char *n,float init,bool alw){
 void OutValue::set(float v){
     val = v;
     timeChanged = gettime();
+//    printf("Set called\n");
 }
 
 UDPClient *UDPClient::instance= NULL;
@@ -84,6 +86,7 @@ void UDPClient::update(){
     
     foreach(OutValue * const &v, values){
         if(v->always || v->timeChanged>v->timeSent){
+            printf("sending %s\n",v->name);
             QTextStream(&s) << " " << v->name << "=" << v->val;
             out.append(s);
             v->timeSent =  gettime();

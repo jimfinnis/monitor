@@ -1,79 +1,58 @@
-var float actual1 100 range -2500 to 2500,
-    float actual2 100 range -2500 to 2500,
-    float actual3 100 range -2500 to 2500,
-    float actual4 100 range -2500 to 2500,
-    float actual5 100 range -2500 to 2500,
-    float actual6 100 range -2500 to 2500,
-    float req1 100 range -2500 to 2500,
-    float req2 100 range -2500 to 2500,
-    float req3 100 range -2500 to 2500,
-    float req4 100 range -2500 to 2500,
-    float req5 100 range -2500 to 2500,
-    float req6 100 range -2500 to 2500,
-    float lift1 100 range -20 to 20,
-    float lift2 100 range -20 to 20,
-    float lift3 100 range -20 to 20,
-    float lift4 100 range -20 to 20,
-    float lift5 100 range -20 to 20,
-    float lift6 100 range -20 to 20,
-    float current1 100 range 0 to 100,
-    float current2 100 range 0 to 100,
-    float current3 100 range 0 to 100,
-    float current4 100 range 0 to 100,
-    float current5 100 range 0 to 100,
-    float current6 100 range 0 to 100,
-    float temp1 1000 range 2 to 15,
-    float temp2 1000 range 2 to 15,
-    float temp3 1000 range 2 to 15,
-    float temp4 1000 range 2 to 15,
-    float temp5 1000 range 2 to 15,
-    float temp6 1000 range 2 to 15,
-    float temp7 1000 range 2 to 15,
-    float temp8 1000 range 2 to 15,
-    float temp9 1000 range 2 to 15,
-    
-    float dist 1000  range 0 to 10000
+#monitor
 
-frame mapframe {
-    gauge { pos 0,0 var temp1 }
-    gauge { pos 1,0 var temp2 }
-    gauge { pos 2,0 var temp3 }
-    gauge { pos 0,1 var temp4 }
-    gauge { pos 1,1 var temp5 }
-    gauge { pos 2,1 var temp6 }
-    gauge { pos 0,2 var temp7 }
-    gauge { pos 1,2 var temp8 }
-    gauge { pos 2,2 var temp9 }
+port 33333
+sendport 33334
+
+#
+# First there's a block of variable declarations. There
+# should be one of these for each key which appears in the
+# data stream, except for "time".
+
+# These are surrounded by {}.
+
+var {
+    float a 1000 range -1 to 1
+    float cool 10 range 0 to 1
+    float sliderout 1000 range -1 to 1
+    float heat 1000 range 0 to 10
 }
+# That's the variables, now we can define the windows, with their
+# frames and widgets.
+# We set up a window (there can only be one, currently) with three
+# frames
 
-frame right {
-    gauge { pos 0,0 var current1}
-    gauge { pos 1,0 var current2}
-    gauge { pos 2,0 var current3}
-    gauge { pos 0,1 var current4}
-    gauge { pos 1,1 var current5}
-    gauge { pos 2,1 var current6}
-    gauge { pos 3,1 var dist}
-}
+window {
+    frame 0,0 {
+        gauge 0,0,1,1 size 100 { var heat }
+        gauge 1,0,1,1 size 100 { var sliderout }
+        
+        momentary 0,2 {
+            out cool var cool 
+        }
+        
+        
+        slider 0,3,2,1 {
+            out sliderset range -1 to 1 var sliderout 
+            initial 0
+        }
+        frame 0,4,2,1 borderless {
+            momentary 0,0 { key "home" nudge sliderset min title "min" }
+            momentary 1,0 { key "down" nudge sliderset down title "down"}
+            momentary 2,0 { key "c" nudge sliderset centre title "centre"}
+            momentary 3,0 { key "up" nudge sliderset up title "up"}
+            momentary 4,0 { key "end" nudge sliderset max title "max"}
+        }
+        
+    }
+    # finally, we put a 2 wide frame in below both the others 
 
-frame bottom {
-    graph {
-        pos 0,0
-        time 300
-        var temp1 { col red width 2}
-        var temp2 { col red width 3}
-        var temp3 { col red width 1}
-        
-        var temp4 { col green width 2}
-        var temp5 { col green width 3}
-        var temp6 { col green width 1}
-        
-        var temp7 { col blue width 2}
-        var temp8 { col blue width 3}
-        var temp9 { col blue width 1}
-        
-        var dist { col white }
+    frame 0,1 {
+        # we fill it with a graph of a and b, 100 seconds wide.
+        graph 0,0 {
+            time 100
+            var a { col red width 2}
+            var sliderout { col yellow width 2}
+        }
     }
 }
-
 

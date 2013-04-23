@@ -29,6 +29,7 @@ Gauge::Gauge(QWidget *parent,Tokeniser *t) :
     char title[64];
     title[0]=0;
     char subtitle[64];
+    fontScale=1;
     subtitle[0]=0;
     
     ConfigRect pos;
@@ -60,6 +61,9 @@ Gauge::Gauge(QWidget *parent,Tokeniser *t) :
     
     while(!done){
         switch(t->getnext()){
+        case T_FONTSCALE:
+            fontScale = t->getnextfloat();
+            break;
         case T_EXPR:
         case T_VAR:
             t->rewind();
@@ -145,7 +149,7 @@ Gauge::Gauge(QWidget *parent,Tokeniser *t) :
     }else label2=NULL;
     
 
-    main->setMinimumSize(50,50);
+    main->setMinimumSize(pos.minsizex,pos.minsizey);
     label->setMaximumSize(10000,20);
     layout->addWidget(main);
     layout->addWidget(label);
@@ -243,7 +247,7 @@ void Gauge::handlePaint(UNUSED QPaintEvent *p,GaugeInternal *widget){
     bool on= centered ? false : true;
 
     QFont f = painter.font();
-    f.setPointSizeF(f.pointSizeF()*1.5);
+    f.setPointSizeF(f.pointSizeF()*fontScale*1.5);
     painter.setFont(f);
 
     for(int i=0;i<ticks;i++){

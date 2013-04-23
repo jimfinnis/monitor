@@ -24,19 +24,30 @@ int inport=33334;
 void udpwrite(const char *s,...);
 
 float a = 2;
+float sliderout = 5;
 
 float warming = 0.15;
 float tdecay = 0.99;
 float *heat;
+float *cool;
+float *sliderset;
 
 
 void runsim(double t){
-    udpwrite("a=%f heat=%f",a,*heat);
+    udpwrite("a=%f heat=%f sliderout=%f",a,*heat,sliderout);
     a += warming; //temperature coming in
     a += *heat*0.04; // extra heat
     a *= tdecay; // temperature going out
     
+    // gradually pull sliderout towards slider
+    sliderout = 0.9f*sliderout + 0.1f* *sliderset;
     
+    /// acknowledge a bool and turn it off
+    if(*cool){
+        a *= 0.5f;
+        udpwrite("cool=1");
+        *cool=0;
+    }
 }
 
     
@@ -66,7 +77,12 @@ int main(int argc,char *argv[]){
     
     UDPServer s(inport);
     
-    heat=s.createVar("heat");
+    heat=s.createVar("heat"); // a toggle boolean
+    cool=s.createVar("cool"); // a momentary boolean
+    
+    // a test value for the slider, which we'll try to pull 'sliderout' towards
+    sliderset=s.createVar("sliderset");
+    
     
     printf("outport is %d, inport is %d\n",outport,inport);
     for(;;){

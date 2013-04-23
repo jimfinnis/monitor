@@ -13,6 +13,7 @@ TEMPLATE = app
 
 SOURCES += main.cpp\
     app.cpp\
+    window.cpp\
     datamgr.cpp \
     tokens.cpp \
     config.cpp \
@@ -30,9 +31,12 @@ SOURCES += main.cpp\
     widgets/graph.cpp \
     widgets/status.cpp \
     widgets/switch.cpp \
+    widgets/momentary.cpp \
+    widgets/slider.cpp \
     widgets/map.cpp
 
 HEADERS  += app.h \
+    window.h \
     datamgr.h \
     datarenderer.h \
     qcommandline.h\
@@ -42,6 +46,8 @@ HEADERS  += app.h \
     udp.h \
     doubletime.h\
     expr.h \
+    nudgeable.h\
+    keyhandler.h\
     etokens.h \
     widgets/statusBlock.h \
     widgets/gauge.h \
@@ -51,9 +57,12 @@ HEADERS  += app.h \
     widgets/graph.h \
     widgets/status.h \
     widgets/switch.h \
+    widgets/momentary.h \
+    widgets/slider.h \
     widgets/map.h
 
 //FORMS    += mainwindow.ui
+RESOURCES += res.qrc
 INCLUDEPATH += /usr/include/marble
 
 LIBS += -L/usr/local/lib -lmarblewidget
