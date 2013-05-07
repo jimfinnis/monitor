@@ -83,6 +83,11 @@ public:
     explicit StatusBlockWrapper(QWidget *parent,Tokeniser *tok);
     virtual ~StatusBlockWrapper(){}
     
+public slots:
+    void dataChanged(){
+        update();
+    }
+
 private:          
     QList<StatusCell *>cells;
     

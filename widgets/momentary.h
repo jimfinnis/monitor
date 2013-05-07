@@ -37,8 +37,13 @@ public:
     virtual void paintEvent(QPaintEvent *event);
     virtual void mousePressEvent(QMouseEvent *event);
     void press();
+
 public slots:
+    void dataChanged(){
+        update();
+    }
     void timerTick();
+    
 private:
     QString title;
     int waitct;

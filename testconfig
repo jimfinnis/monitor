@@ -27,6 +27,7 @@ window {
         gauge 1,0,1,1 size 100 { var sliderout }
         
         momentary 0,2 {
+            immediate
             out cool var cool 
         }
         

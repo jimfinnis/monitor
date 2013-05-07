@@ -72,14 +72,14 @@ QWidget(NULL){
     if(!b)
         throw Exception("no data source given");
     
-    renderer = new DataRenderer(main,b);
+    renderer = new DataRenderer(this,b);
     
     QGridLayout *l = (QGridLayout*)parent->layout();
     l->addWidget(this,pos.y,pos.x,pos.h,pos.w);
     ConfigManager::setStyle(this);
 }
 
-void Number::rebuild(){
+void Number::dataChanged(){
     if(renderer){
         DataBuffer<float> *b = renderer->getBuffer()->getFloatBuffer();
         // get most recent datum

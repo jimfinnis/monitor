@@ -25,7 +25,8 @@ public:
     /// parse the configuration details 
     Number(QWidget *parent,Tokeniser *t);
     
-    void rebuild(); //!< change text and stylesheets
+public slots:
+    void dataChanged();
     
 private:
     QVBoxLayout *layout; //!< the layout

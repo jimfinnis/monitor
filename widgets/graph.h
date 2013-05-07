@@ -77,6 +77,11 @@ public:
     int getItemCount(){
         return renderers.count();
     }
+public slots:
+    void dataChanged(){
+        update();
+    }
+    
 private:
     /// renderers by buffer name (just floats for now)
     QList<GraphDataRenderer *> renderers;

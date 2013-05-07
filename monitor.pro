@@ -38,7 +38,6 @@ SOURCES += main.cpp\
 HEADERS  += app.h \
     window.h \
     datamgr.h \
-    worker.h \
     datarenderer.h \
     qcommandline.h\
     tokens.h \

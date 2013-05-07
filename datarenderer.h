@@ -23,7 +23,7 @@
 /// or in simple cases doing it itself.
 /// Renderers are able to listen to multiple variables.
 
-class DataRenderer : public QObject, DataBufferListener {
+class DataRenderer : public QObject,DataBufferListener {
     Q_OBJECT
 protected:
     /// the variable to which I am linked - note that I can't actually get any
@@ -32,11 +32,16 @@ protected:
     RawDataBuffer *buffer;
     QWidget *widget; //!< the widget of which I am a part
 
+signals:
+    /// we emit this signal when our buffer changes
+    void changed();
+    
 public:
     /// create the renderer, linking to both the parent widget and the buffer
     /// I'm supposed to watch
     DataRenderer(QWidget *w, RawDataBuffer *buf) {
         widget = w;
+        connect(this,SIGNAL(changed()),w,SLOT(dataChanged()));
         buffer = buf;
         buffer->addListener(this);
     }
@@ -53,7 +58,7 @@ public:
     /// this will be called whenever the data buffer has a new
     /// item
     virtual void onNewData(UNUSED RawDataBuffer *b){
-        widget->update();
+        emit changed();
     }
 };
 

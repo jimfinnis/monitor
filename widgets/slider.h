@@ -36,6 +36,9 @@ public slots:
     void timerTick();
     void changed(int v);
     void released();
+    void dataChanged(){
+        update();
+    }
 private:
     bool inverse;
     char title[64];

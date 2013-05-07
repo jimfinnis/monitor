@@ -26,7 +26,6 @@
 #include "datamgr.h"
 #include "qcommandline.h"
 #include "udp.h"
-#include "worker.h"
 
 static QString configFile("config");
 static int port = 13231;
@@ -41,28 +40,6 @@ static const struct QCommandLineConfigEntry conf[] = {
 };
 
 
-/*
- * You might be wondering why I've done this. Well, it turns out that
- * QTimer behaves differently on Fedora and Ubuntu, let alone Windows
- * and MacOS. On Fedora, it works fine. On Ubuntu, the timer only runs
- * WHILE THE MOUSE IS MOVING. ffs. So I've started a thread which runs
- * in a timed loop (Worker) which sends signals to the things it should.
- */
-
-Worker *Application::createTimer(const char *n,int interval){
-    QThread *thread = new QThread;
-    Worker *worker = new Worker(n,interval);
-    printf("Worker; %p\n",worker);
-    worker->moveToThread(thread);
-    connect(thread,SIGNAL(started()),worker,SLOT(process()));
-    connect(worker,SIGNAL(finished()),thread,SLOT(quit()));
-    connect(worker,SIGNAL(finished()),worker,SLOT(deleteLater()));
-    connect(thread,SIGNAL(finished()),thread,SLOT(deleteLater()));
-    thread->start();
-    return worker;
-}
-
-        
 Application::Application(int argc,char *argv[]) : QApplication(argc,argv){
     
     DataManager::init();
@@ -89,11 +66,14 @@ Application::Application(int argc,char *argv[]) : QApplication(argc,argv){
     
     qDebug() << "Port: " << port << ", Config: " << configFile << endl;
     
-    connect(createTimer("gfx",ConfigManager::graphicalUpdateInterval),
-            SIGNAL(tick()),this,SLOT(update()));
-    connect(createTimer("udpsend",ConfigManager::sendInterval*1000),
-            SIGNAL(tick()),this,SLOT(udpSend()));
+    QTimer *timer = new QTimer();
+    connect(timer,SIGNAL(timeout()),this,SLOT(update()));
+    timer->start(ConfigManager::graphicalUpdateInterval);
     
+    timer = new QTimer();
+    connect(timer,SIGNAL(timeout()),this,SLOT(udpSend()));
+    timer->start(ConfigManager::sendInterval*1000);
+            
     udpServer = new UDPServer(port);
     udpServer->setListener(this);
     

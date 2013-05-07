@@ -26,6 +26,10 @@ public:
     
     virtual void paintEvent(QPaintEvent *e);
     
+public slots:
+    void dataChanged(){
+        update();
+    }
 private:
     Compass *compass;
 };

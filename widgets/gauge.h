@@ -16,6 +16,11 @@ public:
         gauge = g;
     }
 
+public slots:
+    void dataChanged(){
+        update();
+    }
+    
 protected:
     virtual void paintEvent(QPaintEvent *event);
 private:

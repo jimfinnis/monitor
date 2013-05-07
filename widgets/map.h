@@ -149,6 +149,11 @@ public:
     void removeRenderer(MapItemRenderer *r){
         renderers.removeAll(r);
     }
+public slots:
+    void dataChanged(){
+        update();
+    }
+    
     
 };
 

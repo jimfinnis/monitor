@@ -27,6 +27,11 @@ public:
     explicit SwitchInternal(class Switch *g) : QWidget((QWidget *)g){
         sw = g;
     }
+public slots:
+    void dataChanged(){
+        update();
+    }
+    
     
 
 protected:
