@@ -43,12 +43,15 @@ public:
     ~Application();
     
     /// handle a key press in any window
-    void keyPress(int key);
+    bool keyPress(int key);
     void setKey(const char *keyname, KeyHandler *h);
 private:
     class UDPServer *udpServer;
     /// a list of keycode->widget mappings, used by keyPress.
     QHash<int,KeyHandler *>keyHandlers;
+    /// I'm having to write this because QTimer behaves oddly on Ubuntu,
+    /// and not on Fedora.
+    class Worker *createTimer(const char *n,int interval);
 };
 
 /// get a pointer to the Application instance

@@ -94,4 +94,5 @@ void Compass::paintEvent(QPaintEvent *event){
             invalid = false;
         }else invalid=true;
     }
+    QWidget::paintEvent(event);
 }

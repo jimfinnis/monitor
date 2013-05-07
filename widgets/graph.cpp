@@ -49,6 +49,8 @@ void Graph::paintEvent(QPaintEvent *event){
     QPainter painter2(this);
     QRect dirty = event->rect();
     painter2.drawImage(dirty,image,dirty);
+    QWidget::paintEvent(event);
+    
 }
 
 
@@ -181,5 +183,4 @@ void GraphFloatRenderer::render(int idx,Graph *g,QPainter &painter){
         prevTime=d->t;
     }
     painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
-    
 }

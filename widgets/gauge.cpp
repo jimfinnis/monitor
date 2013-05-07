@@ -170,6 +170,7 @@ Gauge::Gauge(QWidget *parent,Tokeniser *t) :
 
 void GaugeInternal::paintEvent(QPaintEvent *event){
     gauge->handlePaint(event,this);
+    QWidget::paintEvent(event);
 }
 
 

@@ -42,4 +42,5 @@ void CompassPanel::paintEvent(QPaintEvent *e){
         p.rotate(compass->value); // in DEGREES
         
     p.drawPolygon(points,3);
+    QWidget::paintEvent(e);
 }

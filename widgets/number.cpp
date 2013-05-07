@@ -78,8 +78,8 @@ QWidget(NULL){
     l->addWidget(this,pos.y,pos.x,pos.h,pos.w);
     ConfigManager::setStyle(this);
 }
-    
-void Number::paintEvent(QPaintEvent *event){
+
+void Number::rebuild(){
     if(renderer){
         DataBuffer<float> *b = renderer->getBuffer()->getFloatBuffer();
         // get most recent datum
@@ -89,7 +89,7 @@ void Number::paintEvent(QPaintEvent *event){
             invalid = false;
         }
     }
-    
+printf("goon\n");    
     if(invalid){
         main->setStyleSheet("color:gray;");
         main->setText("no data");
@@ -98,3 +98,4 @@ void Number::paintEvent(QPaintEvent *event){
         main->setText(QString::number(value));
     }
 }
+

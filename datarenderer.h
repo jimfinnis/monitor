@@ -23,7 +23,8 @@
 /// or in simple cases doing it itself.
 /// Renderers are able to listen to multiple variables.
 
-class DataRenderer : public DataBufferListener {
+class DataRenderer : public QObject, DataBufferListener {
+    Q_OBJECT
 protected:
     /// the variable to which I am linked - note that I can't actually get any
     /// data out of this interface without knowing what the type is and casting

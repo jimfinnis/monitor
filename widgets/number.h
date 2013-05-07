@@ -22,13 +22,11 @@ public:
     virtual ~Number(){
         delete renderer;
     }
-    
-    
     /// parse the configuration details 
     Number(QWidget *parent,Tokeniser *t);
     
-    virtual void paintEvent(QPaintEvent *e);
-
+    void rebuild(); //!< change text and stylesheets
+    
 private:
     QVBoxLayout *layout; //!< the layout
     QLabel *main; //!< the main widget

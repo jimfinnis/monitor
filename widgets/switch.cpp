@@ -29,6 +29,7 @@ QWidget(NULL)
     char outVar[64]; //!< name of the variable to write to
     char keyname[64];
     QString title("");
+    keyname[0]=0;
     
     ConfigRect pos = ConfigManager::parseRect();
     
@@ -121,11 +122,13 @@ QWidget(NULL)
 void SwitchInternal::mousePressEvent(QMouseEvent *event)
 {
     sw->onKey();
+    QWidget::mousePressEvent(event);
 }
 
 
 void SwitchInternal::paintEvent(QPaintEvent *event){
     sw->handlePaint(event,this);
+    QWidget::paintEvent(event);
 }
 
 

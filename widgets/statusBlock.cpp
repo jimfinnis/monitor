@@ -83,6 +83,7 @@ void StatusBlock::paintEvent(QPaintEvent *event){
                              name);
         }
     }
+    QWidget::paintEvent(event);
 }
 
 void StatusBlock::set(int id, Colour col){

@@ -6,7 +6,7 @@
 
 QT       += core gui network
 CONFIG  += debug
-LIBS += -lrt
+#LIBS += -lrt
 
 TARGET = monitor
 TEMPLATE = app
@@ -38,6 +38,7 @@ SOURCES += main.cpp\
 HEADERS  += app.h \
     window.h \
     datamgr.h \
+    worker.h \
     datarenderer.h \
     qcommandline.h\
     tokens.h \
@@ -49,6 +50,7 @@ HEADERS  += app.h \
     nudgeable.h\
     keyhandler.h\
     etokens.h \
+    widgets/buttondraw.h \
     widgets/statusBlock.h \
     widgets/gauge.h \
     widgets/number.h \
