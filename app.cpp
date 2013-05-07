@@ -100,7 +100,6 @@ Application::~Application()
 }
 
 void Application::update(){
-    printf("tick\n");
     DataManager::updateAll();
 }
 

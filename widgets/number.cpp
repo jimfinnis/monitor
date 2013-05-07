@@ -89,7 +89,6 @@ void Number::dataChanged(){
             invalid = false;
         }
     }
-printf("goon\n");    
     if(invalid){
         main->setStyleSheet("color:gray;");
         main->setText("no data");
