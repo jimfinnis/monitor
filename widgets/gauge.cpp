@@ -104,10 +104,10 @@ Gauge::Gauge(QWidget *parent,Tokeniser *t) :
         case T_LEVELS:
             {
             if(!buf)
-                throw Exception("specify source before levels");
+                throw ParseException(t,"specify source before levels");
                 if(t->getnext()==T_PREVIOUS){
                     if(prevRed<0)
-                        throw Exception("no previous level set");
+                        throw ParseException(t,"no previous level set");
                     redLevel = prevRed;
                     yellowLevel = prevYellow;
                 }else{
@@ -124,12 +124,12 @@ Gauge::Gauge(QWidget *parent,Tokeniser *t) :
             }
             break;
         default:
-            throw Exception().set("Unexpected '%s'",t->getstring());
+            throw Exception(t->getline()).set("Unexpected '%s'",t->getstring());
         }
     }
     
     if(!buf)
-        throw Exception("no data source given for gauge");
+        throw Exception("no data source given for gauge",t->getline());
     
     if(!title[0])
         strcpy(title,buf->name);

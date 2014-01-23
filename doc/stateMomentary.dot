@@ -1,0 +1,13 @@
+digraph {
+edge [fontsize=8]
+start [shape="none"]
+start -> OK
+OK -> UNSENT [label="click"]
+UNSENT -> UNACK [label="feedback variable exists\nand data sent"]
+UNSENT -> WAIT [label="no feedback variable\nand data sent"]
+WAIT -> OK [label="timer done"]
+UNACK -> WAIT [label="feedback received\nand OK"]
+UNACK -> BADACK [label="feedback received\nand not OK"]
+BADACK -> OK [label="click\n(clear error)"]
+UNACK -> OK [label="click\n(clear error)"]
+}

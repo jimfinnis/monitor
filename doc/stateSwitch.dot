@@ -1,0 +1,16 @@
+digraph {
+edge [fontsize=8]
+start [shape="none"]
+start -> INIT
+UNACK -> BADACK [label="data recvd. \ndisagrees"]
+UNACK -> OK [label="data recvd.\nok"]
+UNACK -> OK [label="click, set value\nto recvd (i.e\nclear the error)."]
+OK -> UNSENT [label="click, change\nvalue"]
+UNSENT -> UNACK [label="feedback variable exists:\nscheduled data sent"]
+UNSENT -> OK [label="no feedback variable:\nscheduled data sent"]
+BADACK -> OK [label="click, set value\nto recvd (i.e\nclear the error)."]
+INIT -> OK [label="feedback variable exists:\ndata received,\nset value from it"]
+INIT -> OK [label="no feedback variable:\nset value to off"]
+
+OK -> OK [label="data received,\nset value from it"]
+}

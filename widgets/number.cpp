@@ -48,7 +48,7 @@ QWidget(NULL){
             done=true;
             break;
         default:
-            throw Exception().set("Unexpected '%s'",t->getstring());
+            throw Exception(t->getline()).set("Unexpected '%s'",t->getstring());
         }
     }
     
@@ -70,7 +70,7 @@ QWidget(NULL){
     main->setAlignment(Qt::AlignVCenter|Qt::AlignHCenter);
     
     if(!b)
-        throw Exception("no data source given");
+        throw Exception("no data source given",t->getline());
     
     renderer = new DataRenderer(this,b);
     

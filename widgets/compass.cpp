@@ -54,7 +54,7 @@ QWidget(NULL){
             done=true;
             break;
         default:
-            throw Exception().set("Unexpected '%s'",t->getstring());
+            throw Exception(t->getline()).set("Unexpected '%s'",t->getstring());
         }
     }
     if(title[0]==0)
@@ -76,7 +76,7 @@ QWidget(NULL){
     setLayout(layout);
     
     if(!b)
-        throw Exception("no data source given");
+        throw Exception("no data source given for compass",t->getline());
     
     renderer = new DataRenderer(main,b);
     

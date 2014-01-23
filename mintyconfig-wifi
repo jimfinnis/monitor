@@ -1,0 +1,398 @@
+#monitor
+#this config is for minty using the radio modem with a udp/serial bridge using ports 4323 for inbound telemetry and 4324 for outbound commands
+port 4323
+sendport 4322
+
+#
+# First there's a block of variable declarations. There
+# should be one of these for each key which appears in the
+# data stream, except for "time".
+
+# These are separated by commas.
+
+var {
+    # Currently only float values are supported - we can emulate
+    # others with these.
+    
+    # "a" is a variable with range -1 to 1. We'll store 100 values
+    # for it in a cyclic buffer, so we can graph 100 values back.
+    
+
+    float speed 100 range 0 to 10
+    float hdg 100 range 0 to 359
+    float hdgerr 100 range 0 to 359
+    float wpdist 100 range 0 to 50000
+    float wpnum 100 range 0 to 100
+    float wphdg 100 range 0 to 359
+    float lspd 100 range 0 to 255
+    float rspd 100 range 0 to 255
+    float xte 100 range -5000 to 5000
+    float volt 100 range 0 to 15
+    float c0 100 range 0 to 20
+    float c1 100 range 0 to 20
+    float c2 100 range 0 to 20
+    float c3 100 range 0 to 20
+    float warn 100 range 0 to 3
+    float autom 100 range 0 to 2
+    float nudg 100 range 0 to 1
+    float home 100 range 0 to 1
+
+
+   
+    # "lat" and "lon" should always be considered to be a pair,
+    # so we link them - if a lat ever arrives without a lon, a
+    # lon will be created at the same time with the same value
+    # it had previously.
+    # Lat has range -90 to 90, lon has range -180 to 180
+    # Being linked, they have the same buffer size - 1000 values.
+    
+    linked (
+    float lat range -90 to 90,
+    float lon range -180 to 180) 1000
+
+    linked (
+    float wplat range -90 to 90,
+    float wplon range -180 to 180 ) 1000
+}
+    
+# That's the variables, now we can define the widgets.
+
+# the only display (currently)
+window inverse title "Map" {
+    
+    # top left
+    frame 0,0,20,1 {
+        map 0,0 {
+        out wplat,wplon immediate
+        
+            point {
+                # For this point renderer,
+                # we render points at lat,lon, with a new point
+                # every time we get a new lat. Note that lat comes first.
+                
+                location var lat,var lon on var lat
+            
+                # we also render 40 of the previous points when new "lat" data arrived.
+            
+                trail 400
+
+                # var a's range is mapped onto the entire hue range, in which 0 is red
+                # and 1 is back to red again; so a=-1 will be red as will a=1. If you
+                # wanted to do something cleverer, you could use an expression.
+            
+                hue var speed
+            
+                # we map variable b's range (-1 to 1) onto the size range 2-20 pixels
+                # to determine the size of the circle drawn.
+            
+                #sizerange 3 20 var temp
+            }
+            
+            point {
+        	location var wplat,var wplon on var wplat
+        	trail 1
+            label "  WP %.0f" var wpnum
+    	    }
+
+            vector {
+                # we also draw a vector at each point - the same points.            
+                location var lat, var lon on var lat
+            
+                trail 1
+            
+                # the width of the vector is set to 3 pixels
+                width 3
+            
+                # the direction of the vector comes from the expression a*180.
+                degrees var hdg
+            
+                # and the vector is black (default is white, for technical reasons)
+                colour black
+            }
+
+         line {
+                # and a line between the most recent coordinate and a fixed point
+                # (in the real app we'd probably use current position and current waypoint)
+                # Note the hackery in the fixed-point expression, since it has to have a var
+                # in it somewhere
+                
+                start
+                    var lat,
+                    var lon 
+                end
+                    var wplat,
+                    var wplon
+                on var lat
+                colour red
+                width 3
+                arrow length 30 angle 20
+            }
+            
+         
+
+
+        }
+    }
+
+}
+
+window inverse title "Telemetry Data" {
+    frame 0,0,20,1 { # top right
+
+        gauge 0,0 { var speed title "Speed" subtitle "kts" fontscale 2}
+
+        compass 1,0 {
+            title "heading"
+            expr "hdg" range auto
+        }        
+
+        compass 2,0 {
+            title "waypoint heading"
+            expr "wphdg" range auto
+        }        
+
+        number 3,0 {
+            title "Cross Track Error"
+            var xte}
+
+       number 4,0 {
+            title "Left Motor"
+           var lspd}
+
+        number 5,0 {
+            title "Right Motor"
+            var rspd}
+
+
+        number 0,1 { var wpnum title "Waypoint Number"}
+        number 1,1 { var wpdist title "Waypoint Distance"}
+
+        number 2,1 { var wplat title "Waypoint Lat" }
+        number 3,1 { var wplon title "Waypoint Lon" }
+	number 4,1 { var lat title "Lat" }
+	number 5,1 { var lon title "Lon" }
+	 
+
+
+
+        gauge 0,2 {var volt title "Battery Volts" fontscale 2}
+        gauge 1,2 {var c0 title "Control System Current" subtitle "Amps" fontscale 2}
+        gauge 2,2 {var c1 title "Charger Current" subtitle "Amps" fontscale 2}
+        gauge 4,2 {var c2 title "Right Motor Current" subtitle "Amps" fontscale 2}
+        gauge 3,2 {var c3 title "Left Motor Current" subtitle "Amps" fontscale 2}
+        number 5,2 {var timesincepacket title "Time Since Last Packet"}
+
+        #number 2,2 { var hdgerr title "Heading Error"}
+        
+
+     status 0,3,  2,3 {
+            size 2,1 
+
+            # floatrange is the most complex type, so I'll get it out
+            # of the way - this shows different colours by assigning
+            # a colour to a range of the values.
+        
+            
+            # bool requires a boolean expression source,
+            # which is actually a float in the range -1 to 1 (although
+            # you can specify "range auto".)  
+        
+            bool {
+                pos 0,0
+                title "Compass Fault"
+                expr "warn=2 || warn=3" range auto
+                false black
+                true red
+            }
+
+            bool {
+                pos 1,0
+                title "GPS Fault"
+                expr "warn=1 || warn=3" range auto
+                false black
+                true red
+
+            }
+
+
+        }
+
+                    
+    } 
+    
+
+    # bottom frame, 2 cols wide
+
+    frame 0,1,20,1 {
+        graph 0,0 {
+            time 300
+            #var asp { col red width 2}
+            #var alt { col yellow width 2}
+            #var tds { col green width 2}
+            var volt { col red width 2}
+            var c0 { col green width 2}
+            var c1 { col yellow width 2}
+            var c2 { col pink width 2}
+            var c3 { col blue width 2}
+            var speed { col black width 2}
+            var lspd { col grey width 2}
+            var rspd { col purple width 2}
+        }
+    }
+}
+
+window inverse title "Controls" {
+
+
+
+    frame 0,1,40,1 {
+
+	switch 0,0 { size 100,100 button
+	    out autom var autom
+	    set 0
+	    title "Manual"
+	    immediate
+	}
+	
+	switch 1,0 { size 100,100 button
+	    out autom var autom
+	    set 1
+	    title "Autonomous"
+	    immediate
+	}
+	
+	switch 2,0 { size 100,100 button
+	    out autom var autom
+	    set 2
+	    title "Heading Hold"
+	    immediate
+	}
+
+
+#        momentary 0,0 {
+ #           out autom set 1
+ #           title "Autonomous"
+#  	     immediate
+ #       }
+
+ #       momentary 1,0 {
+ #           out autom set 2
+ #           title "Heading Hold"
+ #           key "h" 
+ #            immediate
+ #       }
+
+
+
+        momentary 0,1 {
+            out home
+            title "Go Home"
+	    immediate
+        }
+
+        momentary 1,1 {
+            out skipwp 
+            title "Skip WP"
+            key "s"
+            immediate
+        }
+
+
+
+
+    }
+
+
+    frame 0,2,40,1 {
+
+
+        momentary 0,0 { 
+            out nud set -1
+            title "Nudge Left"
+            key "q"
+	    immediate
+        }
+
+        momentary 1,0 {
+            out dir set 4
+            key "up"
+            title "Faster"
+	    immediate
+        }
+
+        momentary 2,0 {
+            out nud set 1
+            key "e"
+            title "Nudge Right"
+	    immediate
+        }
+
+
+        momentary 0,1 {
+            out dir set 1          
+            title "Left"
+            key "left"
+	    immediate
+        }
+
+        momentary 1,1 {
+            out stop
+            title "STOP"
+            key " "
+	    immediate
+        }
+
+
+        momentary 2,1 {
+            out dir set 2  
+            title "Right"
+            key "right"
+	    immediate
+        }
+
+        momentary 1,2 {
+            out dir set 3
+            title "Slower"
+            key "down"
+	    immediate
+        }
+        
+
+
+        #momentary 3,0 {
+        #    title "Heading Hold"
+        #    key "h"
+        #}
+
+        #slider 2,0 {
+        #    title "Manual"
+        #    auto 
+        #}
+    }
+
+    frame 40,1,40,2 {    
+
+        slider  0,0 {
+            out lspd
+            var lspd
+            title "Left Speed"
+            range 0 to 255
+            vertical     
+            integer
+	    immediate
+        }
+        slider  1,0 {
+            out rspd
+            var rspd
+            title "Right Speed"
+            range 0 to 255
+            vertical
+            integer
+	    immediate
+        }
+
+
+    }
+
+
+}

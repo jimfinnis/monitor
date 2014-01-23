@@ -1,6 +1,5 @@
 #monitor
-
-
+updateinterval 0.5
 var {
     float actual1 100 range -2500 to 2500
     float actual2 100 range -2500 to 2500
@@ -43,12 +42,12 @@ var {
     float temp8 10000 range 2 to 20
     float temp9 10000 range 2 to 20
     
-    float h1 10000 range 0 to 1
-    float h2 10000 range 0 to 1
-    float h3 10000 range 0 to 1
-    float h4 10000 range 0 to 1
-    float h5 10000 range 0 to 1
-    float h6 10000 range 0 to 1
+    float h1 10000 range 0 to 2
+    float h2 10000 range 0 to 2
+    float h3 10000 range 0 to 2
+    float h4 10000 range 0 to 2
+    float h5 10000 range 0 to 2
+    float h6 10000 range 0 to 2
     
     float dist 10000  range 0 to 10000
     float ticks 10 range 0 to 60000
@@ -57,7 +56,7 @@ var {
 window fullscreen {
     
     
-    frame 0,0,1,30 {
+    frame 0,0 {
         gauge 0,0 { var req1 }
         gauge 1,0 { var req3 }
         gauge 2,0 { var req5 }
@@ -65,16 +64,16 @@ window fullscreen {
         gauge 1,1 { var req4 }
         gauge 2,1 { var req6 }
         
-        gauge 0,2 { var actual1 }
-        gauge 1,2 { var actual3 }
-        gauge 2,2 { var actual5 }
-        gauge 0,3 { var actual2 }
-        gauge 1,3 { var actual4 }
-        gauge 2,3 { var actual6 }
+            gauge 0,2 { var temp1 levels 16 17}
+            gauge 1,2 { var temp4 levels previous}
+            gauge 2,2 { var temp7 levels previous}
+            gauge 0,3 { var temp2 levels previous}
+            gauge 1,3 { var temp5 levels previous}
+            gauge 2,3 { var temp8 levels previous}
     }
     
-    frame 1,0,1,30 spacing 0{
-        frame 0,0,1,1 borderless {
+    frame 1,0 spacing 20{
+        frame 0,0 borderless {
             gauge 0,0 { var steer1}
             gauge 1,0 { var steer3}
             gauge 2,0 { var steer5}
@@ -83,7 +82,7 @@ window fullscreen {
             gauge 2,1 { var steer6}
         }
         
-        frame 1,0,1,1 borderless {
+        frame 1,0 borderless {
             gauge 0,0 { var lift1}
             gauge 1,0 { var lift3}
             gauge 2,0 { var lift5}
@@ -92,60 +91,43 @@ window fullscreen {
             gauge 2,1 { var lift6}
         }
     
-        frame 0,1,2,2 spacing 0 {
-            frame 0,0,3,1 borderless {
-                gauge 0,0 { var temp1 subtitle "DS 1" levels 16 17}
-                gauge 1,0 { var temp2 subtitle "DS 2" levels previous}
-                gauge 2,0 { var temp3 subtitle "LL 12" levels previous}
-                gauge 0,1 { var temp4 subtitle "DS 3" levels previous}
-                gauge 1,1 { var temp5 subtitle "DS 4" levels previous}
-                gauge 2,1 { var temp6 subtitle "LL 34" levels previous}
-                gauge 0,2 { var temp7 subtitle "DS 5" levels previous}
-                gauge 1,2 { var temp8 subtitle "DS 6" levels previous}
-                gauge 2,2 { var temp9 subtitle "LL 56" levels previous}
-            }
-            frame 3,0 borderless {
-                frame 0,3,2,1 borderless {
-                    number 0,0 { var dist}
-                    number 0,1 { var ptime title "log time"}
-            number 0,1 { var ticks}
+        
+        frame 1,1  {
+            number 0,0 { var dist}
+            number 0,1 { var ptime title "log time"}
     
-                    status 0,2,1,2 {
-                        size 2,3
-                        colour black "#400" true
-                        floatrange {
-                            pos 0,0     title "HOT1"  var temp1
-                            bands
-                            <13     blue
-                            <16     green
-                            <17     yellow
-                            else    red
-                        }
-                        floatrange {
-                            pos 1,0     title "HOT2"  var temp2 bands previous
-                        }
-                        floatrange {
-                            pos 0,1     title "HOT3"  var temp4 bands previous
-                        }
-                        floatrange {
-                            pos 1,1     title "HOT4"  var temp5 bands previous
-                        }
-                        floatrange {
-                            pos 0,2     title "HOT5"  var temp7 bands previous
-                        }
-                        floatrange {
-                            pos 1,2     title "HOT6"  var temp8 bands previous
-                        }
-                    }
+            status 1,0,1,2 {
+                size 2,3
+                floatrange {
+                    pos 0,0     title "HOT1"  var temp1
+                    bands
+                    <13     blue
+                    <16     green
+                    <17     yellow
+                    else    red
+                }
+                floatrange {
+                    pos 1,0     title "HOT2"  var temp2 bands previous
+                }
+                floatrange {
+                    pos 0,1     title "HOT3"  var temp4 bands previous
+                }
+                floatrange {
+                    pos 1,1     title "HOT4"  var temp5 bands previous
+                }
+                floatrange {
+                    pos 0,2     title "HOT5"  var temp7 bands previous
+                }
+                floatrange {
+                    pos 1,2     title "HOT6"  var temp8 bands previous
                 }
             }
         }
-        
     }
 
 
 
-    frame 0,30,2,10 {
+    frame 0,1,2,1 {
 
         gauge 0,0 { var current1}
         gauge 1,0 { var current2}
@@ -155,14 +137,14 @@ window fullscreen {
         gauge 2,1 { var current6}
 
         gauge 3,0 { var h1}
-        gauge 4,0 { var h2}
-        gauge 5,0 { var h3}
-        gauge 3,1 { var h4}
-        gauge 4,1 { var h5}
+        gauge 4,0 { var h3}
+        gauge 5,0 { var h5}
+        gauge 3,1 { var h2}
+        gauge 4,1 { var h4}
         gauge 5,1 { var h6}
 
         graph 6,0,7,1 {
-            time 500
+            time 3000
             var temp1 { col red width 2}
             var temp2 { col red width 3}
             var temp3 { col red width 1}
@@ -178,8 +160,7 @@ window fullscreen {
             var dist { col white }
         }
         graph 6,1,7,1{
-            time 500
-            
+            time 3000
             var h1 { col red width 2}
             var h2 { col red width 3}
             var h3 { col red width 1}

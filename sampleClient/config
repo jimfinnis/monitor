@@ -1,0 +1,66 @@
+#monitor
+port 33333
+sendport 33334
+sendinterval 0.1
+var {
+    float a 10000 range 0  to 20
+    float heat 10000 range 0 to 1
+    float multi 10000 range 0 to 4
+    float cool 1000 range 0 to 1
+    float sliderout 1000 range -1 to 1
+    float sliderset2 1000 range -1 to 1
+}
+
+window inverse {   
+    frame 0,0 {
+        gauge 0,0 { var a }
+        number 1,0 { var timesincepacket }
+        switch 2,0 {
+            button
+            immediate
+            out heat
+            title "heat" key "h"
+            var heat
+        }        
+        momentary 3,0 {
+            out cool
+            var cool
+            immediate
+            title "cool" key "g"
+        }
+        momentary 4,0 { special "quit" key "q"}
+        momentary 5,0 { out bang key "b" }
+    }        
+    
+    frame 0,1 {
+        graph 0,0 {
+            time 100
+            var a { col red width 2}
+        }
+    }
+
+    frame 0,2 {    
+        slider 0,0 {
+            out sliderset range -1 to 1 var sliderout 
+        }        
+        slider 0,1 {
+            out sliderset2 range -1 to 1 var sliderset2
+        }        
+    }
+
+    frame 0,3 borderless {
+        momentary 0,0 { size 100,100 key "home" nudge sliderset min title "min" }
+        momentary 1,0 { size 100,100 key "down" nudge sliderset down title "down"}
+        momentary 2,0 { size 100,100 key "c" nudge sliderset centre title "centre"}
+        momentary 3,0 { size 100,100 key "up" nudge sliderset up title "up"}
+        momentary 4,0 { size 100,100 key "end" nudge sliderset max title "max"}
+    }
+    
+    frame 1,0,1,4 {
+        switch 0,0 { size 100,100 button out multi var multi key "0" set 0 colours blue,black}
+        switch 0,1 { size 100,100 button out multi var multi key "1" set 1 colours blue,black}
+        switch 0,2 { size 100,100 button out multi var multi key "2" set 2 colours blue,black}
+        switch 0,3 { size 100,100 button out multi var multi key "3" set 3 title "FIRE" colours red,black}
+    }   
+    
+}

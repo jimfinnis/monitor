@@ -48,6 +48,21 @@ StatusBlock(NULL){
         case T_CCURLY:
             done = true;
             break;
+        case T_COLOUR:
+        case T_COL:
+        case T_COLOR:
+            {
+                char colname[128];
+                t->getnextident(colname);
+                QColor col = ConfigManager::parseColour(Qt::green);
+                int qq = t->getnext();
+                if(qq!=T_TRUE && qq!=T_FALSE)
+                    throw UnexpException(t,"true or false for white text in colour");
+                
+                StatusColour::addColour(colname,col,qq==T_TRUE);
+            }
+            
+            break;
         case T_FLOATRANGE:
             cells.append(new StatusFloatRangeCell(t,this));
             break;
@@ -69,7 +84,7 @@ void StatusFloatRangeCell::set(){
     DataBuffer<float> *b = renderer->getBuffer()->getFloatBuffer();
     Datum<float> *d = b->read(0);
     if(d && d->isRecent()){
-        StatusBlock::Colour col=elseCol;
+        ColourCode col=elseCol;
         float v = d->d;
         for(int i=0;i<ct;i++){
             if(v<rangeVal[i]){
@@ -78,23 +93,14 @@ void StatusFloatRangeCell::set(){
         }
         widget->set(id,col);
     } else
-        widget->setCol(id,64,64,64,true); // grey for no data
+        widget->set(id,StatusColour::GREY);
 }
 
-static StatusBlock::Colour parseCol(Tokeniser *t){
-    switch(t->getnext()){
-    case T_RED:
-        return StatusBlock::RED;
-    case T_GREEN:
-        return StatusBlock::GREEN;
-    case T_YELLOW:
-        return StatusBlock::YELLOW;
-    case T_BLUE:
-        return StatusBlock::BLUE;
-    case T_BLACK:
-        return StatusBlock::BLACK;
-    default:throw UnexpException(t);
-    }
+static ColourCode parseCol(Tokeniser *t){
+    if(t->getnext()!=T_IDENT)
+        throw UnexpException(t,"colour name");
+    
+    return StatusColour::getColourByName(t->getstring());
 }
 
 void StatusFloatRangeCell::parseBands(Tokeniser *t){
@@ -114,7 +120,7 @@ void StatusFloatRangeCell::parseBands(Tokeniser *t){
         case T_PREVIOUS: // must be last
             {
                 if(!prev)
-                    throw Exception("no previous bands to copy!");
+                    throw ParseException(t,"no previous bands to copy!");
                 for(int i=0;i<prev->ct;i++){
                     cols[i] = prev->cols[i];
                     rangeVal[i]=prev->rangeVal[i];
@@ -139,7 +145,7 @@ StatusCell(w){
     ct=0;
     char title[256];
     char str[256];
-    StatusBlock::Colour whenCol;
+    ColourCode whenCol;
     
     // these have to be in some kind of order
     
@@ -148,6 +154,11 @@ StatusCell(w){
     x = t->getnextint();
     t->getnextcheck(T_COMMA);
     y = t->getnextint();
+    
+    if(x>=widget->blockwidth)
+        throw ParseException(t,"pos x out of range");
+    if(y>=widget->blockheight)
+        throw ParseException(t,"pos x out of range");
     
     if(t->getnext() != T_TITLE)
         throw UnexpException(t,"title string");
@@ -197,8 +208,8 @@ StatusCell(w){
     DataBuffer<float> *buf;
     char title[256];
     
-    trueCol = StatusBlock::GREEN;
-    falseCol = StatusBlock::BLACK;
+    trueCol = StatusColour::GREEN;
+    falseCol = StatusColour::BLACK;
     
     // these have to be in some kind of order
     
@@ -252,5 +263,5 @@ void StatusBooleanCell::set(){
     if(d && d->isRecent()){
         widget->set(id,d->d<0 ? falseCol:trueCol);
     } else
-        widget->setCol(id,64,64,64,true); // grey for no data
+        widget->set(id,StatusColour::GREY);
 }

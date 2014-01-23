@@ -91,7 +91,7 @@ Graph::Graph(QWidget *parent,Tokeniser *t) : QWidget(NULL){
     }
     
     if(pos.x < 0)
-        throw Exception("no position given for graph");
+        throw Exception("no position given for graph",t->getline());
      
     setMinimumSize(pos.minsizex,pos.minsizey);
     QGridLayout *l = (QGridLayout*)parent->layout();

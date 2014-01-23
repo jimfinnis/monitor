@@ -5,12 +5,19 @@
 #include <QHash>
 
 struct GridEntry {
-    QHash<StatusBlock::Colour,QString> altNames;
+    QHash<int,QString> altNames;
     QString name;
-    StatusBlock::Colour curColour;
+    ColourCode curColour;
     QColor color;
     bool whiteText;
 };
+
+ColourCode StatusColour::BLACK,StatusColour::RED,StatusColour::GREEN,
+StatusColour::YELLOW,StatusColour::BLUE,StatusColour::GREY;
+
+QHash<QString,ColourCode> StatusColour::colNameMap;
+QHash<ColourCode,StatusColour *> StatusColour::colCodeMap;
+int StatusColour::ctr=0;
 
 StatusBlock::StatusBlock(QWidget *parent) : QWidget(parent) {
     grid = NULL;
@@ -27,18 +34,18 @@ void StatusBlock::setGridSize(int w,int h){
     
     for(int i=0;i<blockwidth*blockheight;i++){
         grid[i].name.fromAscii("");
-        set(i,BLACK);
+        set(i,StatusColour::BLACK);
     }
 }
 
 int StatusBlock::addItem(int x, int y, const char *s){
     int id = getID(x,y);
-    set(id,BLACK);
+    set(id,StatusColour::BLACK);
     grid[id].name = QString::fromAscii(s);
     return id;
 }
 
-void StatusBlock::addAltText(int id,Colour c,const char *s){
+void StatusBlock::addAltText(int id,ColourCode c,const char *s){
     grid[id].altNames[c]=QString::fromAscii(s);
 }
 
@@ -86,32 +93,10 @@ void StatusBlock::paintEvent(QPaintEvent *event){
     QWidget::paintEvent(event);
 }
 
-void StatusBlock::set(int id, Colour col){
+void StatusBlock::set(int id, ColourCode col){
     grid[id].curColour=col;
-    switch(col){
-    case RED:
-        setCol(id,255,0,0,true);
-        break;
-    case YELLOW:
-        setCol(id,255,255,0,false);
-        break;
-    case BLUE:
-        setCol(id,0,0,255,true);
-        break;
-    case GREEN:
-        setCol(id,0,255,0,false);
-        break;
-    case BLACK:
-        setCol(id,0,0,0,true);
-        break;
-    default:
-        break;
-    }
+    StatusColour *c = StatusColour::getColour(col);
+    grid[id].color = c->color;
+    grid[id].whiteText = c->whiteText;
 }
 
-void StatusBlock::setCol(int id, float r,float g,float b, bool whiteText){
-    grid[id].color.setRgb(r,g,b);
-    grid[id].whiteText = whiteText;
-    update();
-}
-            

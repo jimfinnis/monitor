@@ -20,6 +20,104 @@
 #include "../udp.h"
 #include "../app.h"
 
+/// momentary button states 
+
+
+static class MOMOKState : public State<Momentary> {
+public:
+    virtual UDPState getUDPState(){return OK;}
+    virtual void onClick(Momentary *t);
+} okState;
+
+static class MOMUnsentState : public State<Momentary> {
+public:
+    virtual UDPState getUDPState(){return UNSENT;}
+    virtual void onDataSent(Momentary *t);
+} unsentState;
+
+static class MOMUnackState : public State<Momentary> {
+public:
+    virtual UDPState getUDPState(){return UNACK;}
+    virtual void onNewData(Momentary *t,float v);
+    virtual void onClick(Momentary *t);
+} unackState ;
+
+static class MOMBadackState : public State<Momentary> {
+public:
+    virtual UDPState getUDPState(){return BADACK;}
+    virtual void onClick(Momentary *t);
+} badackState;
+
+static class MOMWaitState : public State<Momentary> {
+public:
+    virtual UDPState getUDPState(){return WAITING;}
+    virtual void onEnter(State<Momentary> &prevState, Momentary *t);
+    virtual void onTimerTick(Momentary *t);
+    virtual void onClick(Momentary *t);
+} waitState;
+
+
+void MOMOKState::onClick(Momentary *t){
+    t->performAction(); // also handles state change
+}
+
+void MOMUnsentState::onDataSent(Momentary *t){
+    if(t->hasFeedback())
+        t->go(unackState);
+    else
+        t->go(waitState);
+}
+
+void MOMUnackState::onNewData(Momentary *t,float v){
+    // make sure a matching value was returned
+    if(v!=t->getSendValue())
+        t->go(badackState);
+    else
+        t->go(waitState);
+}
+
+void MOMUnackState::onClick(Momentary *t){
+    // we've clicked an unack - reset the error
+    t->go(okState);
+}
+
+void MOMBadackState::onClick(Momentary *t){
+    // we've clicked a badack - reset the error
+    t->go(okState);
+}
+
+void MOMWaitState::onEnter(State<Momentary> &prevState, Momentary *t){
+    t->startTimer(300);
+}
+void MOMWaitState::onTimerTick(Momentary *t){
+    if(t->waitct++>4){
+        t->waitct=0;
+        t->stopTimer();
+        t->go(okState);
+    }
+}
+
+void MOMWaitState::onClick(Momentary *t){
+    t->performAction();// also handles state change
+}
+
+
+
+void Momentary::performAction(){
+    if(isSpecial){
+        doSpecial();
+        go(waitState);
+    } else if(nudge){
+//        printf("snark: momentary got nudge\n");
+        nudge->nudge(nudgeType);
+        go(waitState);
+    } else {
+        go(unsentState);
+        out->set(outVal);
+        if(immediate)
+            UDPClient::getInstance()->update();
+    }
+}
 
 Momentary::Momentary(QWidget *parent,Tokeniser *t) :
 QWidget(NULL)
@@ -47,6 +145,9 @@ QWidget(NULL)
     DataBuffer<float> *buf=NULL;
     
     outVar[0]=0;
+    isSpecial=false;
+    
+    int setWidth=-1,setHeight=-1;
     
     while(!done){
         switch(t->getnext()){
@@ -54,6 +155,11 @@ QWidget(NULL)
         case T_VAR:
             t->rewind();
             buf = ConfigManager::parseFloatSource();
+            break;
+        case T_SIZE:
+            setWidth = t->getnextint();
+            t->getnextcheck(T_COMMA);
+            setHeight = t->getnextint();
             break;
         case T_OUT:
             t->getnextident(outVar);
@@ -77,37 +183,52 @@ QWidget(NULL)
         case T_NUDGE:{
             char buf[256];
             t->getnextident(buf);
-            nudge = ConfigManager::getNudgeable(buf);
-            nudgeType = ConfigManager::parseNudgeType();
+            try {
+                nudge = ConfigManager::getNudgeable(buf);
+                nudgeType = ConfigManager::parseNudgeType();
+            } catch(Exception &e){
+                throw Exception(e,t->getline());
+            }
             break;}
         case T_CCURLY:
             done=true;
             break;
         case T_KEY:
             t->getnextstring(keyname);
-            getApp()->setKey(keyname,this);
+            try {
+                getApp()->setKey(keyname,this);
+            } catch(Exception& e){
+                throw Exception(e,t->getline());
+            }
+            break;
+        case T_SPECIAL:
+            isSpecial=true;
+            t->getnextstring(special);
             break;
         default:
-            throw Exception().set("Unexpected '%s'",t->getstring());
+            throw Exception(t->getline()).set("Unexpected '%s'",t->getstring());
         }
     }
     
-    if(!outVar[0] && !nudge)
-        throw Exception("no output name or nudge given for momentary");
+    if(!outVar[0] && !nudge && !isSpecial)
+        throw Exception("no output name or nudge given for momentary",t->getline());
     
     if(nudge && buf)
-        throw Exception("cannot have a nudge momentary with a feedback source");
+        throw Exception("cannot have a nudge momentary with a feedback source",t->getline());
     
     // create a new outvar
     if(!nudge){
         out = new OutValue(outVar,0,always);
         out->listener=this; // so we know when our var was sent
         UDPClient::getInstance()->add(out);
-        timer.start(500);
     }
     
-    if(title.size()==0)
-        title = QString(outVar);
+    if(title.size()==0){
+        if(isSpecial)
+            title = QString(special);
+        else
+            title = QString(outVar);
+    }
     
     if(keyname[0]){
         QString foo(keyname);
@@ -119,100 +240,71 @@ QWidget(NULL)
     
     renderer = buf ? new DataRenderer(this,buf) : NULL;
     
-    if(out){
-        state = UNSENT;
-        out->set(outVal);
-    } else {
-        state = OK;
-    }
-    
     connect(&timer,SIGNAL(timeout()),this,SLOT(timerTick()));
     
     // initialise the button drawer
     bd.init(this,title,ConfigManager::inverse,&pos);
+    bd.waitingCol = Qt::green; // the wait state is just visual feedback,.
+    
+    // overrides what was done in ButtonDraw::init()
+    if(setWidth>0){
+        setMinimumSize(setWidth,setHeight);
+        setMaximumSize(setWidth,setHeight);
+    }
+    
+    
+    machine.start(okState,this);
 }
 
 void Momentary::onSend(){
-    if(renderer)
-        state = UNACK;
-    else{
-        waitct=0;
-        state = WAITING; // no feedback, just go straight to done
-    }
-    update(); // redraw
+    machine.get().onDataSent(this);
 }
 
 void Momentary::timerTick(){
-    printf("blouk\n");
-    stateCheck();
+    checkForNewData();
+    machine.get().onTimerTick(this);
 }
 
-void Momentary::stateCheck(){
-    DataBuffer<float> *b;
-    Datum<float> *d;
-    printf("state check state %d waitct %d\n",state,waitct);
-    switch(state){
-    case UNSENT:
-        break;
-    case UNACK:
-        b = renderer->getBuffer()->getFloatBuffer();
-        d = b->read(0);
-        // This is unusual in that we explicitly check
-        // that the most recent packet arrived AFTER
-        // the UDP packet was sent. Best make sure the
-        // rover really does send packets used in this
-        // in a timely manner!
-        if(d && d->isRecent() && d->t > out->timeSent){
-            if(d->d > 0.5f) // it's a boolean
-                state = OK; // done - no need to go into WAITING, really.
-            else
-                state = BADACK;
+
+void Momentary::checkForNewData(){
+    if(renderer){
+        DataBuffer<float> *b = renderer->getBuffer()->getFloatBuffer();
             
+        // get most recent datum
+        Datum<float> *d = b->read(0);
+        if(d && d->isRecent()){
+            if(d->t > out->timeSent){
+                machine.get().onNewData(this,d->d); 
+            }
         }
-        break;
-    case BADACK:
-        // not much we can do here.
-        timer.stop();
-        break;
-    case WAITING:
-        if(waitct++==4){
-            state = OK;
-            waitct=0;
-            timer.stop();
-            update();
-        }
-        break;
-    case OK:
-        break;
     }
 }
-                  
 
 void Momentary::onKey(){
-    if(nudge){
-        waitct=0;
-        state = WAITING;
-        nudge->nudge(nudgeType);
-    } else {
-        state = UNSENT;
-        out->set(outVal);
-        if(immediate)
-            UDPClient::getInstance()->update();
-    }
-    update();
-    timer.start(100);
+    machine.get().onClick(this);
     
 }
 void Momentary::mousePressEvent(QMouseEvent *event){
-    onKey();
+    machine.get().onClick(this);
     QWidget::mousePressEvent(event);
 }
 
 
 void Momentary::paintEvent(QPaintEvent *event){
-    
-    stateCheck();
-    bd.draw(event,state);
+    checkForNewData();
+    bd.draw(event,machine.get().getUDPState());
     QWidget::paintEvent(event);
 }
 
+
+
+/// Special actions for momentaries
+
+void Momentary::doSpecial(){
+    if(!strcmp(special,"quit"))
+        exit(0);
+    else if(!strcmp(special,"resetmaps"))
+        getApp()->resetAllMaps();
+    else
+        printf("Unknown special: %s\n",special);
+}

@@ -1,0 +1,17 @@
+digraph {
+edge [fontsize=8]
+start [shape="none"]
+start -> INIT
+INIT -> OK [label="feedback variable exists:\ndata received,\nset value from it"]
+INIT -> OK [label="no feedback variable"]
+OK -> DRAGGING [label="press"]
+DRAGGING -> UNSENT [label="release"]
+UNACK -> BADACK [label="data recvd. \ndisagrees"]
+UNACK -> OK [label="data recvd.\nok"]
+UNACK -> DRAGGING [label="press"]
+UNSENT -> DRAGGING [label="press"]
+UNSENT -> UNACK [label="feedback variable exists:\nscheduled data sent"]
+UNSENT -> OK [label="no feedback variable:\nscheduled data sent"]
+BADACK -> DRAGGING [label="press"]
+BADACK -> OK [label="data recvd.\nok"]
+}

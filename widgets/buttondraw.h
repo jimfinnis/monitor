@@ -41,7 +41,7 @@ public:
         widget->setMinimumSize(pos->minsizex,pos->minsizex); // ALWAYS SQUARE
         
         waitingCol = Qt::red;
-        OKCol = Qt::green;
+        OKCol = Qt::gray;
     }
     
     void draw(
@@ -62,6 +62,12 @@ public:
         QBrush brush(Qt::SolidPattern);
         
         switch(state){
+        case INIT:
+            // in a switch, we're waiting to see what the remote value
+            // is before we can set the current switch position
+            brush.setColor(Qt::yellow); // yellow barberpole
+            brush.setStyle(Qt::BDiagPattern);
+            break;
         case UNSENT:
             brush.setColor(QColor(64,64,64));
             break;

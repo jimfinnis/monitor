@@ -51,8 +51,8 @@ public:
 
 class StatusFloatRangeCell : public StatusCell {
     float rangeVal[16]; //!< values we test against
-    StatusBlock::Colour cols[16]; //!< colours corresponding with the values
-    StatusBlock::Colour elseCol; //!< colour to show if no conditions are true
+    ColourCode cols[16]; //!< colours corresponding with the values (these are StatusColour codes)
+    ColourCode elseCol; //!< colour to show if no conditions are true
     int ct; //!< how many entries
     
     void parseBands(Tokeniser *t);
@@ -65,8 +65,8 @@ public:
 /// a status cell which shows two colours for negative and non-negative
 /// ranges of a float value.
 class StatusBooleanCell : public StatusCell {
-    StatusBlock::Colour trueCol; //!< for non-negative values
-    StatusBlock::Colour falseCol; //!< for negative values
+    ColourCode trueCol; //!< for non-negative values
+    ColourCode falseCol; //!< for negative values
     
 public:
     virtual void set();

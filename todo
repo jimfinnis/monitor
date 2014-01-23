@@ -1,0 +1,52 @@
+DONE    map labels
+DONE    lines between map points
+DONE    v shaped compass vectors (arrow system with customisable arrows)
+        flash last location object on message update
+WONTFIX (graph scales)
+DONE    fix bug with similar named labels, batt_pwr is being mistaken for batt
+        bitfield system
+DONE    key events being eaten by map
+DONE    "special" event buttons, such as "quit"
+DONE    zoom/centre
+
+DONE    proper state machine for switches and buttons (+docs)
+            - can't click except when in OK or BADACK
+            - click in BADACK doesn't send; it sets value to what was read (i.e. clears the error)
+WONTFIX reverse long/lat ordering in map! (no, the lat/long is the Right Way)
+DONE    click to send waypoint (wp_lat, wp_long) 
+        
+DONE    sliders should handle value recvd in OK
+
+DONE    multiway switches and variable switch colours
+        
+DONE    wplat/wplon updated occasionally, line from lat/lon to wp
+        disappears.
+        
+DONE    define colours in status block
+
+DONE    rewrite slider as a state machine - it's getting ugly in there
+        The behaviour has changed quite a bit to allow the slider to track
+        the feedback value in a sensible way.
+
+DONE    sliders taking over arrow key events
+
+DONE    ability to set absolute size of buttons + buttonlike switches
+
+DONE    line numbers on errors
+
+DONE    ensure can receive broadcast UDP
+        
+DONE    make sure send on packet we receive data from (i.e. record that IP)
+
+docs:
+DONE    momentary 'set' doc
+DONE    clarify feedback var doc (not obvious you need to specify 'var')
+DONE    document removal of UDP send timestamp
+
+DONE    new switch stuff ('set' and colours)
+DONE    document integer sliders
+ 
+DONE    audio warnings
+        
+
+

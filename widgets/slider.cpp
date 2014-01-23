@@ -12,7 +12,10 @@
 #include <QPainter>
 #include <QGridLayout>
 #include <QSlider>
+#include <QEvent>
+#include <QKeyEvent>
 #include <QLabel>
+#include <math.h>
 
 #include "../config.h"
 #include "../exception.h"
@@ -20,31 +23,116 @@
 #include "../tokens.h"
 #include "../doubletime.h"
 #include "../udp.h"
+#include "sliderstyles.h"
 
-static const char *defaultStyle=
-" QSlider::groove:horizontal {border: 1px solid #999999; height: 8px; margin: 2px 0;}\
-  QSlider::handle:horizontal {background: #ffffff;border: 1px solid #5c5c5c; width: 18px; height: 18px; margin: -10px 0;  border-radius: 3px;}\
-  QSlider::groove:vertical {border: 1px solid #999999; width: 8px; margin: 0 2px;}\
-  QSlider::handle:vertical {background: #ffffff;border: 1px solid #5c5c5c; height: 18px; width: 18px; margin: 0 -10px;  border-radius: 3px;}\
-";
-static const char *unsentStyle=
-" QSlider::groove:horizontal {border: 1px solid #999999; height: 8px; margin: 2px 0;}\
-  QSlider::handle:horizontal {background: #808080;border: 1px solid #5c5c5c; width: 18px; height: 18px; margin: -10px 0;  border-radius: 3px;}\
-  QSlider::groove:vertical {border: 1px solid #999999; width: 8px; margin: 0 2px;}\
-  QSlider::handle:vertical {background: #808080;border: 1px solid #5c5c5c; height: 18px; width: 18px; margin: 0 -10px;  border-radius: 3px;}\
-";
-static const char *unackStyle=
-" QSlider::groove:horizontal {border: 1px solid #999999; height: 8px; margin: 2px 0;}\
-  QSlider::handle {background: url(:images/diag.png);border: 1px solid #5c5c5c; width: 18px; height: 18px; margin: -10px 0;  border-radius: 3px;}\
-  QSlider::groove:vertical {border: 1px solid #999999; width: 8px; margin: 0 2px;}\
-  QSlider::handle:vertical {background: url(:images/diag.png);border: 1px solid #5c5c5c; width: 18px; height: 18px; margin: 0 -10px;  border-radius: 3px;}\
-";
-static const char *badAckStyle=
-" QSlider::groove:horizontal {border: 1px solid #999999; height: 8px; margin: 2px 0;}\
-  QSlider::handle {background: url(:images/cross.png);border: 1px solid #5c5c5c; width: 18px; margin: -10px 0;  border-radius: 3px;}\
-  QSlider::groove:vertical {border: 1px solid #999999; width: 8px; margin: 0 2px;}\
-  QSlider::handle:vertical {background: url(:images/cross/png);border: 1px solid #5c5c5c; width: 18px; height: 18px; margin: 0 -10px;  border-radius: 3px;}\
-";
+static class SliderInitState : public State<Slider> {
+public:
+    virtual UDPState getUDPState(){return INIT;}
+    virtual void onEnter(State<Slider> &prevState, Slider *t);
+    virtual void onNewData(Slider *t,float v);
+} initState;
+
+static class SliderOKState : public State<Slider> {
+public:
+    virtual UDPState getUDPState(){return OK;}
+    virtual void onNewData(Slider *t,float v);
+    virtual void onClick(Slider *t);
+} okState;
+
+static class SliderUnsentState : public State<Slider> {
+public:
+    virtual UDPState getUDPState(){return UNSENT;}
+    virtual void onDataSent(Slider *t);
+    virtual void onClick(Slider *t);
+} unsentState;
+
+static class SliderDraggingState : public State<Slider> {
+    virtual UDPState getUDPState(){return UNSENT;}
+    virtual void onSliderRelease(Slider *t);
+} draggingState;
+
+static class SliderUnackState : public State<Slider> {
+public:
+    virtual UDPState getUDPState(){return UNACK;}
+    virtual void onNewData(Slider *t,float v);
+    virtual void onClick(Slider *t);
+} unackState ;
+
+static class SliderBadackState : public State<Slider> {
+public:
+    virtual UDPState getUDPState(){return BADACK;}
+    virtual void onNewData(Slider *t,float v);
+    virtual void onClick(Slider *t);
+} badackState;
+
+
+void SliderInitState::onEnter(State<Slider> &prevState, Slider *t){
+    if(t->initSet){
+        t->set(t->initial);
+        t->out->set(t->initial);
+    }
+    if(!t->hasFeedback())
+        t->go(okState);
+}
+void SliderInitState::onNewData(Slider *t,float v){
+    t->set(v);
+    t->go(okState);
+}
+
+
+void SliderOKState::onClick(Slider *t){
+    t->go(draggingState);
+}
+
+void SliderOKState::onNewData(Slider *t,float v){
+    t->set(v); // not at all sure about this!
+}
+
+
+void SliderDraggingState::onSliderRelease(Slider *t){
+    t->go(unsentState);
+    t->queueSend();
+}
+
+void SliderUnsentState::onDataSent(Slider *t){
+    if(t->hasFeedback())
+        t->go(unackState);
+    else
+        t->go(okState);
+}
+
+void SliderUnsentState::onClick(Slider *t){
+    // OK, we're going to send *again*
+    t->go(draggingState);
+}
+
+void SliderUnackState::onNewData(Slider *t,float v){
+    float err = v - t->out->val;
+    if(t->withinEpsilon(err))
+        t->go(okState);
+    else
+        t->go(badackState);
+}
+
+void SliderUnackState::onClick(Slider *t){
+    // OK, we're going to send *again*
+    t->go(draggingState);
+}
+
+void SliderBadackState::onNewData(Slider *t,float v){
+    // check to see if the problem somehow resolves itself
+    float err = v - t->out->val;
+    t->lastReadInBadack=v;
+//    t->set(v); /* DON'T DO THIS or your slider will move as soon as you set it! */
+    if(t->withinEpsilon(err))
+        t->go(okState);
+}
+
+void SliderBadackState::onClick(Slider *t){
+    // we've clicked a badack - it's fine, just go into dragging again
+    t->go(draggingState);
+}
+
           
           
 
@@ -65,13 +153,14 @@ QWidget(NULL)
     
     t->getnextcheck(T_OCURLY);
     
-    bool initSet=false;
-    float initial;
+    initSet=false;
     
     DataBuffer<float> *buf=NULL;
     
     outVar[0]=0;
     epsilon = 0.001f;
+    isInteger=false;
+    
     while(!done){
         switch(t->getnext()){
         case T_EXPR: // optional, provides a 'feedback' value
@@ -81,6 +170,10 @@ QWidget(NULL)
             break;
         case T_EPSILON:
             epsilon = t->getnextfloat();
+            break;
+        case T_INTEGER:
+            isInteger=true;
+            break;
         case T_OUT:
             t->getnextident(outVar);
             break;
@@ -112,14 +205,14 @@ QWidget(NULL)
             done=true;
             break;
         default:
-            throw Exception().set("Unexpected '%s'",t->getstring());
+            throw Exception(t->getline()).set("Unexpected '%s'",t->getstring());
         }
     }
     
     if(!outVar[0])
-        throw Exception("no output name given for slider");
+        throw Exception("no output name given for slider",t->getline());
     if(!rangeGot)
-        throw Exception("no range given for slider");
+        throw Exception("no range given for slider",t->getline());
     if(!initSet)initial=minVal;
     
     // create a new outvar
@@ -134,13 +227,19 @@ QWidget(NULL)
     renderer = buf ? new DataRenderer(this,buf) : NULL;
     connect(&timer,SIGNAL(timeout()),this,SLOT(timerTick()));
     
-    ConfigManager::registerNudgeable(outVar,this);
+    try{
+        ConfigManager::registerNudgeable(outVar,this);
+    }catch(Exception& e){
+        throw Exception(e,t->getline());
+    }
     
     QVBoxLayout *layout;
     
     layout = new QVBoxLayout(this);
     layout->setSpacing(0);
-    slider = new QSlider(vertical?Qt::Vertical:Qt::Horizontal,this);
+    slider = new InternalSlider(vertical?Qt::Vertical:Qt::Horizontal,this);
+    slider->setMaximum(100);
+    slider->setMinimum(0);
     layout->setAlignment(Qt::AlignCenter);
     label = new QLabel(title);
     label->setAlignment(Qt::AlignCenter);
@@ -150,33 +249,21 @@ QWidget(NULL)
     setLayout(layout);
     
     slider->setStyleSheet(defaultStyle);
-    connect(slider,SIGNAL(valueChanged(int)),this,SLOT(changed(int)));
+    connect(slider,SIGNAL(sliderPressed()),this,SLOT(pressed()));
     connect(slider,SIGNAL(sliderReleased()),this,SLOT(released()));
-    
-    // send initial value
-    out->set(initial);
-    
-    // set slider position
-    initial = initial-minVal;
-    initial = initial/(maxVal-minVal);
-    initial *= (slider->maximum()-slider->minimum());
-    initial += slider->minimum();
-    slider->setSliderPosition((int)initial);
-    
     
     QGridLayout *l = (QGridLayout*)parent->layout();
     l->addWidget(this,pos.y,pos.x,pos.h,pos.w);
     setMinimumSize(100,100);
-    setState(UNSENT);
     timer.start(200);
+    
+    machine.start(initState,this);
+    setDrawProperties();
 }
 
 
 void Slider::onSend(){
-    if(renderer)
-        setState(UNACK);
-    else
-        setState(OK);
+    machine.get().onDataSent(this);
     update();
 }
 
@@ -185,36 +272,90 @@ void Slider::paintEvent(QPaintEvent *event){
 }
 
 void Slider::timerTick(){
-    DataBuffer<float> *b;
-    Datum<float> *d;
-    switch(state){
-    case UNSENT:
-        break;
-    case BADACK:// keep waiting - maybe a good ack will turn up
-    case UNACK:
-        b = renderer->getBuffer()->getFloatBuffer();
-        // here, the value we check against is the value we sent.
-        d = b->read(0);
-        // see if the variable we're watching matches the slider value
+    
+    if(renderer){
+        DataBuffer<float> *b = renderer->getBuffer()->getFloatBuffer();
+        Datum<float> *d = b->read(0);
         if(d && d->isRecent()){
-            float err = d->d - out->val;
-            if(err<0)err=-err;
-            if(err < epsilon) // it's match
-                setState(OK);
-            else
-                setState(BADACK);
+            if(d->t > out->timeSent){
+//                printf("New data : %f. Outvar set to %f\n",d->d,out->val);
+                machine.get().onNewData(this,d->d);
+            }
         }
-        break;
-    case WAITING:
-    case OK:
-        timer.stop();
-        break;
     }
 }
 
-void Slider::setState(UDPState st){
-    state = st;
-    switch(state){
+void InternalSlider::keyPressEvent(QKeyEvent *event){
+    event->ignore();
+}
+
+void Slider::pressed(){
+    machine.get().onClick(this);
+}
+
+void Slider::released(){
+    machine.get().onSliderRelease(this);
+}
+
+void Slider::queueSend(){
+    float v = slider->sliderPosition();
+    
+//    printf("sending slider pos %f ",v);
+    
+    v -= slider->minimum();
+    v /= (slider->maximum()-slider->minimum());
+    v *= maxVal-minVal;
+    v += minVal;
+//    printf("which maps to value %f\n",v);
+    out->set(isInteger?floorf(v):v);
+    update();
+    
+    if(immediate)
+        UDPClient::getInstance()->update();
+}    
+
+void Slider::nudge(NudgeType n){
+//    printf("snark: slider attempted nudge\n");
+    pressed();
+    
+    const int step = 10;
+    
+    int v = slider->sliderPosition();
+//    printf("Nudge: value was %d, ",v);
+    switch(n){
+    case UP:
+        //        slider->triggerAction(QAbstractSlider::SliderSingleStepAdd);
+        v+=step;
+        if(v>slider->maximum())v=slider->maximum();
+        slider->setSliderPosition(v);
+//        printf("value is now %d\n",slider->sliderPosition());
+        break;
+    case DOWN:
+//        slider->triggerAction(QAbstractSlider::SliderSingleStepSub);
+        v-=step;
+        if(v<slider->minimum())v=slider->minimum();
+        slider->setSliderPosition(v);
+//        printf("value is now %d\n",slider->sliderPosition());
+        break;
+    case MIN:
+        slider->setSliderPosition(slider->minimum());
+        break;
+    case MAX:
+        slider->setSliderPosition(slider->maximum());
+        break;
+    case CENTRE:
+        slider->setSliderPosition((slider->maximum()+slider->minimum())/2);
+        break;
+    }
+    released();
+    slider->update();
+}
+
+void Slider::setDrawProperties(){
+    switch(machine.get().getUDPState()){
+    case INIT:
+        slider->setStyleSheet(initStyle);
+        break;
     case UNSENT:
         slider->setStyleSheet(unsentStyle);
         break;
@@ -229,44 +370,8 @@ void Slider::setState(UDPState st){
         slider->setStyleSheet(defaultStyle);
         break;
     }
-}
-
-void Slider::changed(int iv){
-    float v = iv;
-    // get to 0-1
-    v /= (slider->maximum()-slider->minimum());
-    v -= slider->minimum();
-    // remap to output
-    v *= maxVal-minVal;
-    v += minVal;
-    out->set(v);
-    setState(UNSENT);
-    timer.start(200);
-}
-
-void Slider::released(){
-    if(immediate)
-        UDPClient::getInstance()->update();
-        
-}
-
-void Slider::nudge(NudgeType n){
-    switch(n){
-    case UP:
-        slider->triggerAction(QAbstractSlider::SliderSingleStepAdd);
-        break;
-    case DOWN:
-        slider->triggerAction(QAbstractSlider::SliderSingleStepSub);
-        break;
-    case MIN:
-        slider->setSliderPosition(slider->minimum());
-        break;
-    case MAX:
-        slider->setSliderPosition(slider->maximum());
-        break;
-    case CENTRE:
-        slider->setSliderPosition((slider->maximum()+slider->minimum())/2);
-        break;
-    }
-    slider->update();
+    
+    setEnabled(machine.get().getUDPState()!=INIT);
+    
+    printf("slider state %d\n",machine.get().getUDPState());
 }

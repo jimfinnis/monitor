@@ -15,6 +15,7 @@ var {
     float cool 10 range 0 to 1
     float sliderout 1000 range -1 to 1
     float heat 1000 range 0 to 10
+    float batt_pwr 1000 range 0 to 10
 }
 # That's the variables, now we can define the windows, with their
 # frames and widgets.
@@ -25,6 +26,7 @@ window {
     frame 0,0 {
         gauge 0,0,1,1 size 100 { var heat }
         gauge 1,0,1,1 size 100 { var sliderout }
+        gauge 2,0,1,1 size 100 { var batt_pwr }
         
         momentary 0,2 {
             immediate
