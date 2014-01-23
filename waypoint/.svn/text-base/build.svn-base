@@ -1,0 +1,4 @@
+#!/bin/sh
+
+gcc -otest1 test1.c waypoint.c udp.c -g
+gcc -otest2 test2.c waypoint.c udp.c -g

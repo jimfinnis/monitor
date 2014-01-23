@@ -1,0 +1,221 @@
+
+
+
+Both sides of the system run the same code.
+
+A waypoint list consists of tuples of doubles, each containing
+at least 2 entries for lat and long. There is also a 'filled'
+boolean for each waypoint.
+
+There are two waypoint lists - the 'in use' list and the 'transit'
+list. The transit list may be null; it's the list of waypoints
+currently being transferred.
+
+On the robot the 'in use' list is the waypoint set being followed
+
+On the monitor the 'in use' list is the waypoint set being edited: both
+sets are shown if there are two.
+
+All messages are in the format:
+
++CCCC+TID+msg...
+
+where CCCC is a 16bit hex checksum and TID is a 3 digit hex transaction
+ID.
+
+The transmission and reception of certain commands initiates a transaction,
+whereupon both sides record the TID. Any non-initiatory
+message received with a non-matching TID is ignored - this allows for 
+multiple clients to be used safely, although once a transaction is in
+progress it can be interrupted by another client starting a transaction.
+We could remove this, but it's important that a new transaction can be 
+started at any time without having to restart either end of the comms.
+
+Message summary (CCCC and TID omitted):
++rA         request other system to start transmission (A is autoswitch)
++tN:NF:A    start transmission (N is number of waypoints, NF is number
+            of fields, A is autoswitch)
++TN:NF:A    as above, but TID must agree - this doesn't initiate a transmission,
+            but is used to reply to a +r
++atE        acknowledge transmission start (E is an error code, zero if OK)
++wN..       send a waypoint. A minimal waypoint might be +w534:3 4.323 52.32
++awA        acknowledge all waypoints received. A>=1 if autoswitch is set
+            (so we can inform user)
++am         send as an occasional acknowledgement of some waypoints
++uN         start using the transit list, at waypoint N
++auE        acknowledge that the transit list is being used or an error
+            (E=0 if OK)
+
+Autoswitch specifies that after transfer, the transit set be copied into
+the working set without a separate +u message. The value of the autoswitch field
+is the index of the waypoint which should be used as the current waypoint, plus one.
+
+Protocol use-cases
+==================
+
+1) Sending a block of waypoints, without autoswitch
+
+
+Local           Remote
++t2:5:0                         (2 points, 5 fields, autoswitch off)
+                +at             (acknowledged)
++w0...                          (waypoint 0)
++w1...                          (waypoint 1)
+                +aw0            (all points received, autoswitch was off)
++stfu                           (all finished)
+
+2) Fetching a set of waypoints, with autoswitch, with current waypoint=3
+
+Local           Remote
++r1                             (request, autoswitch on)
+                +T2:5:4         (2 pts, 5 fields, autoswitch on, set to 3 (note the +1))
++at                             (acknowledged)
+                +w0...          (waypoint 0)
+                +w1...          (waypoint 1)
++aw4                            (all points received, autoswitch was 3)
+                +stfu           (all finished)
+                
+3) Requesting switch (copy transit to working)
+
+Local           Remote
++u0                             (request switch, start at wp 0)
+                +au             (acknowledge)
++stfu                           (all finished)
+
+
+Timeout
+=======
+
+The wpTick() method checks the timeout status. If the time since the last
+event is greater than the timeout, the error value is set to 3, the 
+state returns to INIT, and the ack function is called. No check is made
+if the state is INIT.
+Events are:
+1) receipt of a message
+2) change of state
+
+   
+
+Protocol by states and messages received
+========================================
+
+(note - the protocol retry count is set to an initial value
+ at startup, and reset on the successful completion of the protocol)
+
+INIT state
+
+    msg recvd or event  actions
+
+    msg +tN:NF:A        record TID
+                        clear error state
+                        check NF is correct, if not set an error
+                        destroy old transit list
+                        create new transit list with N empty entries
+                        clear valid transit buffer received flag
+                        set auto-switch to A (0/1+startpoint)
+                        goto RECVINIT
+    msg +uN             goto SWITCH
+    msg +awA            send +stfu (stands for Stop Sending Ack Msgs!) and record autoswitch
+    msg +auE            send +stfu and check error
+    msg +atE            send +stfu (no need to check error)
+    msg +rA or start
+    transmit function
+    called:             destroy old transit list
+                        if no working set, send +ae..
+                        clear valid transit buffer received flag
+                        generate new Transaction ID
+                        copy working list to transit list
+                        send +tN:NF:A where N is the number of waypoints, NF
+                        is the number of fields and A is the autoswitch value.
+                        goto SENDINIT
+    requestwps called:  goto FETCH
+    any other msg:      ignore
+
+
+
+FETCH state
+
+    on entry or
+    timer elapsed       send +rA
+    
+    msg +aeE            set error code, goto INIT
+    msg +tN:NF:A        as in INIT
+    msg +TN:NF:A        as in INIT (but we check the TID)
+                    
+
+SENDINIT state
+
+    msg +atE            if E is nonzero set error 3 and go to INIT, otherwise...
+                        goto SENDING
+    timer elapsed or                            
+    any other msg:      decrement the protocol retry count. If non-zero,
+                        resend +tN.. to restart the protocol, otherwise abort.
+
+
+SENDING state
+
+    on entry, or
+    timer elapsed       send next waypoint +wN ... (looping if required,
+                        but after N times round the loop, behave as for "any other msg")
+    msg +awA            set valid transit buffer received flag and record autoswitch
+                        goto INIT
+    msg +am             ignore, but reset the timeout
+    any other msg:      decrement the protocol retry count. If non-zero,
+                        resend +tN.. to restart the protocol, otherwise abort.
+
+
+RECVINIT state
+
+    on entry, or
+    timer elapsed       send +at
+    msg +wN..           record waypoint
+                        if all waypoints are now set, goto RECVDONE
+                        else goto RECEIVING
+                        also send +am every 5 or so waypoints
+    msg +tN:NF:A        as in INIT
+    msg +stfu           goto INIT
+    any other msg:      ignore
+                        
+
+RECEIVING state
+
+    msg +wN..           record waypoint
+                        if all waypoints are now set, goto RECVDONE
+    msg +tN:NF:A        as in INIT
+    any other msg:      ignore
+
+
+RECVDONE state
+
+    on entry            send +awA
+                        set valid transit buffer received flag
+    timer elapsed       send +awA   
+    msg +stfu           goto INIT state    
+    msg +u              goto SWITCH
+    msg +tN:NF:A        as in INIT
+    msg +wN...          send +awA
+    any other msg:      ignore
+
+
+SWITCH state
+
+    on entry            copy transit buffer into working buffer
+                        copy working buffer into control system
+                        set current waypoint
+                        send +au
+    on timer elapsed    send +au
+    msg +tN:NF:A        as in INIT
+    msg +stfu           goto INIT state                        
+    msg +u              as 'on entry'
+    any other msg:      ignore
+
+
+REQSWITCH state
+
+    on entry or
+    timer elapsed       send +u
+    
+    msg +auE            set error code, goto INIT
+    msg +tN:NF:A        as in INIT
+                    
+

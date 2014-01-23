@@ -85,7 +85,7 @@ public:
 
     /// this is the offset between the timestamp on the last packet received and
     /// the local time at which it was received - it's localtime-packettime.
-    static float packetTimeOffset;
+    static double packetTimeOffset;
 };
 
 
@@ -97,7 +97,9 @@ template <class T> struct Datum {
     
     /// true if the data arrived relatively recently
     bool isRecent(){
-        double now = DataManager::getTimeNow();
+        // if the remote and monitor are on the same timebase, I could use just
+        // getTimeNow here.
+        double now = DataManager::getTimeNow() - DataManager::packetTimeOffset;
         return (now - t < DataManager::dataValidInterval);
     }
         
@@ -138,7 +140,7 @@ public:
     static const int Exact = 2;
     static const int TooEarly = -1;
     static const int TooLate = -2;
-    static const int NoData = -3;
+    static const int NoData = 0;
     
     /// an enum of the ACTUAL type of this data buffer. The type system
     /// here is rather odd; internally all our listener stuff is on
@@ -195,7 +197,7 @@ public:
         free((void *)name);
     }
     
-    /// get the timestamp for a datum, or T if the datum is out of range
+    /// get the timestamp for a datum, or 0 if the datum is out of range. 
     virtual double getTimeOfDatum(int i)=0;
     
     /// return the number of items written in total

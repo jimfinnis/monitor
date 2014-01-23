@@ -21,8 +21,8 @@ static bool exprTokeniserInitialised=false;
 
 class ExprTError : public ITokeniserErrorHandler{
     virtual void HandleTokeniserError(class Tokeniser *t){
-        throw Exception()
-              .set("unexpected '%s' at line %d in config file",t->getstring(),t->getline());
+        throw ParseException(t)
+              .set("unexpected '%s' in expression",t->getstring());
     }
 };
 
@@ -82,8 +82,8 @@ struct Instruction {
         op = OP_GETFLOAT;
         d.fbuf = b;
     }
-        
-        
+    
+    
 };
 
 /// operators with priorities on the stack
@@ -109,7 +109,7 @@ static QList<Instruction *> *out;
 /// shunting yard - handle an operator
 static void handleBinop(Opcode op,int priority){
     if(expectingValue)
-        throw Exception("invalid binary operator");
+        throw Exception("invalid binary operator in expression");
     
     while(!opstack.isEmpty() && priority>opstack.top().pri){
         out->append(new Instruction(opstack.pop().op));
@@ -168,26 +168,26 @@ Expression::Expression(const char *s){
     // this is the famous shunting yard algorithm.
     while(!done){
         etok.getnext();
-//        printf("Token: %s  ",etok.getstring());
-//        printf("Stack: ");dumpst();
+        //        printf("Token: %s  ",etok.getstring());
+        //        printf("Stack: ");dumpst();
         
         switch(etok.getcurrent()){
         case T_INT:
         case T_FLOAT:
             if(!expectingValue)
-                throw Exception().set("unexpected '%s'",etok.getstring());
+                throw Exception().set("unexpected '%s' in expression",etok.getstring());
             out->append(new Instruction(etok.getfloat()));
             expectingValue=false;
             break;
         case T_IDENT:
             if(!expectingValue)
-                throw Exception().set("unexpected '%s'",etok.getstring());
+                throw Exception().set("unexpected '%s' in expression",etok.getstring());
             expectingValue=false;
             {
                 fflush(stdout);
                 DataBuffer<float> *b = DataManager::findFloatBuffer(etok.getstring());
                 if(!b)
-                    throw Exception().set("cannot find variable '%s'",etok.getstring());
+                    throw Exception().set("cannot find variable '%s' in expression",etok.getstring());
                 b->addExpr(this);
                 capRequired += b->capacity;
                 out->append(new Instruction(b));
@@ -241,22 +241,22 @@ Expression::Expression(const char *s){
             else{
                 etok.rewind();
                 if(!expectingValue)
-                    throw Exception("unexpected unary '!'");
+                    throw Exception("unexpected unary '!' in expression");
                 opstack.push(StackOp(OP_NOT,2));
             }
             break;
             
         case T_OPREN:
             if(!expectingValue)
-                throw Exception("unexpected '('");
+                throw Exception("unexpected '(' in expression");
             opstack.push(StackOp(OP_OPREN,100));
             break;
         case T_CPREN:
             if(expectingValue)
-                throw Exception("unexpected ')'");
+                throw Exception("unexpected ')' in expression");
             for(;;){
                 if(opstack.isEmpty())
-                    throw Exception().set("2mismatched parens");
+                    throw Exception().set("mismatched parens in expression");
                 Opcode op = opstack.pop().op;
                 if(op==OP_OPREN)break;
                 out->append(new Instruction(op));
@@ -270,7 +270,7 @@ Expression::Expression(const char *s){
     while(!opstack.isEmpty()){
         Opcode op = opstack.pop().op;
         if(op==OP_OPREN)
-            throw Exception().set("1mismatched parens");
+            throw Exception().set("mismatched parens in expression");
         out->append(new Instruction(op));
     }
     
@@ -278,6 +278,7 @@ Expression::Expression(const char *s){
     
     if(!capRequired)
         throw Exception("expression must have at least one variable");
+    
     
     /// min and max set to zero, will be reset later.
     buffer = new DataBuffer<float>(RawDataBuffer::FLOAT,s,
@@ -290,7 +291,7 @@ Expression::Expression(const char *s){
         Instruction *inst = (*out)[i];
         dumpinst(i,*inst);
     }
-        
+    
 }
 
 void Expression::recalc(){
@@ -309,7 +310,7 @@ void Expression::recalc(){
         float a,b;
         
         
-//        dumpinst(i,ip);
+        //        dumpinst(i,ip);
         
         switch(ip->op){
         case OP_ADD:
@@ -381,7 +382,7 @@ void Expression::recalc(){
                 if(d){
                     if(d->t > timeOfLatestChange)
                         timeOfLatestChange=d->t;
-                
+                    
                     st.push(d->d);
                 }else
                       st.push(0); // undefined value is zero

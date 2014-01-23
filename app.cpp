@@ -26,8 +26,13 @@
 #include "datamgr.h"
 #include "qcommandline.h"
 #include "udp.h"
+#include "waypointdialog.h"
+#include "widgets/statusBlock.h"
+#include "waypoint/waypoint.h"
 
 static QString configFile("config");
+static QString waypointFile;
+
 static int port = 13231;
 
 bool portSetInCmdLine=false;
@@ -35,19 +40,72 @@ bool portSetInCmdLine=false;
 static const struct QCommandLineConfigEntry conf[] = {
     { QCommandLine::Option, 'p', "port", "UDP port number", QCommandLine::Optional},
     { QCommandLine::Option, 'f', "file", "config file",     QCommandLine::Optional},
+    { QCommandLine::Option, 'w', "waypoints", "waypoint file",     QCommandLine::Optional},
     
     { QCommandLine::None, '\0', NULL, NULL, QCommandLine::Default }
 };
 
+static int ackerr;
+static int ackwasas;
+
+
+// sets the error code..
+extern "C" {
+void waypointAckFunc(int e,int was){
+    printf("Ack called %d:%d\n",e,was);fflush(stdout);
+    extern Application *gApp;
+    ackerr = e;
+    ackwasas = was;
+    // fire off the message a after a bit
+    QTimer::singleShot(500,gApp,SLOT(ackMessage()));
+    
+}
+}
+
+// ..which is displayed by this slot once a timer
+// has elasped, to avoid ackflooding (this is modal)
+void Application::ackMessage(){
+    if(ackerr){
+        
+        int stat = wpStatus();
+        int err = stat>>8;
+        int state = (stat>>1)&0x7f;
+        int txc = stat&1;
+            
+        QString ss;
+        if(err==3)
+            ss.sprintf("Comms timeout");
+        else
+            ss.sprintf("Error: %d  State: %d",err,state);
+        
+        QMessageBox::critical(NULL,"Critical error",
+                              QString("Waypoint transfer failed:\n")+ss);
+        
+        wpReset();
+    } else {
+        QString ss("transfer appears complete.");
+        if(ackwasas)
+            ss += QString("\nTransit set copied to working set.");
+        QMessageBox::information(NULL,"Waypoint transfer",ss);
+        // should be safe.
+        wpCopyTransitToWorking(0);
+    }
+}    
+
 
 Application::Application(int argc,char *argv[]) : QApplication(argc,argv){
-    
     DataManager::init();
+    StatusColour::initColours();
 
+    
+    wpStateBuffer = DataManager::createFloatBuffer("wpstate",100,0,100);
+    wpErrorBuffer = DataManager::createFloatBuffer("wperror",100,0,100);
+    
     QCommandLine cmdLine(this);
     cmdLine.setConfig(conf);
     cmdLine.enableHelp(true);
     
+    wpInit(udpSendFunc,waypointAckFunc);
     
     connect(&cmdLine, SIGNAL(switchFound(const QString &)),
             this, SLOT(switchFound(const QString &)));
@@ -60,6 +118,9 @@ Application::Application(int argc,char *argv[]) : QApplication(argc,argv){
     cmdLine.parse();
     
     ConfigManager::parseFile(configFile);
+    if(!waypointFile.isNull()){
+        WaypointDialog::doLoad(NULL,waypointFile);
+    }
     
     if(ConfigManager::port>0 && !portSetInCmdLine)
         port = ConfigManager::port;
@@ -73,13 +134,15 @@ Application::Application(int argc,char *argv[]) : QApplication(argc,argv){
     timer = new QTimer();
     connect(timer,SIGNAL(timeout()),this,SLOT(udpSend()));
     timer->start(ConfigManager::sendInterval*1000);
+    
+    timer = new QTimer();
+    connect(timer,SIGNAL(timeout()),this,SLOT(waypointTick()));
+    timer->start(700);
             
     udpServer = new UDPServer(port);
     udpServer->setListener(this);
     
-    UDPClient::getInstance()->setAddress(ConfigManager::udpSendAddr,
-                                         ConfigManager::udpSendPort);
-    
+    UDPClient::getInstance()->setPort(ConfigManager::udpSendPort);
 }
 
 Window *Application::createWindow(){
@@ -101,11 +164,28 @@ Application::~Application()
 
 void Application::update(){
     DataManager::updateAll();
+    checkAudio();
 }
 
 void Application::udpSend(){
     UDPClient::getInstance()->update();
 }
+
+
+void Application::waypointTick(){
+    wpTick();
+    int stat = wpStatus();
+    int err = stat>>8;
+    int state = (stat>>1)&0x7f;
+    int txc = stat&1;
+    
+    
+    wpErrorBuffer->write(DataManager::getTimeNow(),
+                         (float)err);
+    wpStateBuffer->write(DataManager::getTimeNow(),
+                         (float)state);
+}
+
 
 void Application::fatalError(const QString &details)
 {
@@ -120,7 +200,12 @@ void Application::fatalError(const QString &details)
 }
 
 void Application::processUDP(char *s,int size){
-    DataManager::parsePacket(s,size);
+    if(*s=='+'){
+        printf("Received: %s\n",s);fflush(stdout);
+        wpProcessString(s);
+    }
+    else
+        DataManager::parsePacket(s,size);
 }
 
 
@@ -143,17 +228,21 @@ void Application::optionFound(const QString&s, const QVariant& v){
         portSetInCmdLine=true;
     } else if(s=="file"){
         configFile = v.toString();
-    }
+    } else if(s=="waypoints"){
+        waypointFile = v.toString();
+    } else 
+        throw Exception("bad option in command line");
 }
 void Application::paramFound(const QString&s, const QVariant& v){
 }
 void Application::parseError(const QString& s){
-    throw Exception().set("error: %s",s.toLatin1().data());
+    throw Exception().set("command line parse error: %s",s.toLatin1().data());
 }
 
 
 bool Application::keyPress(int key){
     if(keyHandlers.contains(key)){
+        printf("Calling handler\n");
         keyHandlers.value(key)->onKey();
         return true;
     }else 
@@ -189,9 +278,21 @@ void Application::setKey(const char *keyname, KeyHandler *h){
         key = Qt::Key_Right;
     else key = atoi(keyname);
     
+    printf("Inserting key handler for %s\n",keyname);
     if(keyHandlers.contains(key))
         throw Exception().set("we already have a handler for key '%c'",key);
     
     keyHandlers.insert(key,h);
 }
+
     
+void Application::addAudio(const char *warning,DataBuffer<float> *buf,bool speech){
+    AudioWarning *w = new AudioWarning(warning,buf,speech);
+    audioWarnings.append(w);
+}
+void Application::checkAudio(){
+    foreach(AudioWarning *a, audioWarnings){
+        a->check();
+    }
+}
+

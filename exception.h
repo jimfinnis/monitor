@@ -17,12 +17,31 @@
 #include <exception>
 
 class Exception : public std::exception {
-public:
-    Exception(const char *e){
-        if(e)
-            strncpy(error,e,1024);
+private:
+    void consError(const char *e=NULL){
+        e = e?e:"????";
+        strncpy(error,e,1024);
+        rebuild();
+    }
+protected:
+    void rebuild(){
+        if(line>=0)
+            snprintf(out,1024,"%s (line %d)",error,line);
         else
-            strcpy(error,"???");
+            strcpy(out,error);
+    }        
+        
+public:
+    
+    
+    Exception(const char *e){
+        line = -1;
+        consError(e);
+    }
+    
+    Exception(const char *e,int l) {
+        line = l;
+        consError(e);
     }
     
     /// a variadic fluent modifier to set a better string with sprintf
@@ -32,57 +51,38 @@ public:
         
         vsnprintf(error,1024,s,args);
         va_end(args);
+        rebuild(); // have to do this again
         return *this;
     }
     
     /// default ctor
     Exception(){
-        strcpy(error,"???");
+        line = -1;
+        consError();
     }
     
-    /// construct the exception. Note that
-    /// space is allocated here, which is deleted
-    /// by the destructor. This version considers e to be
-    /// a format string, and arg a string argument.
-    Exception(const char *e,const char *arg){
-        snprintf(error,1024,e,arg);
+    Exception(int l) {
+        line = l;
+        consError();
+    }
+    
+    /// allows us to rethrow an exception, adding a line
+    Exception(Exception& e,int l){
+        strcpy(error,e.error);
+        line = l;
+        rebuild();
     }
     
     /// return the error string
     virtual const char *what () const throw (){
-        return error;
+        return out;
     }
     
     /// a copy of the error string
     char error[1024];
-};
-
-/// this exception is thrown when a generic runtime error occurs
-
-class RuntimeException : public Exception {
-public:
-    RuntimeException(const char *e,const char *fn,int l){
-        char tmp[512];
-        if(e){
-            strcpy(tmp,e);e=tmp;  // to stop bloody exp-ptrcheck complaining.
-        }
+    char out[1024];
+    int line; //!< line number if occurred in parse
     
-        if(fn)
-            strncpy(fileName,fn,1024);
-        else
-            strcpy(fileName,"???");
-        line = l;
-        
-        snprintf(error,512,"%s(%d):  %s",fileName,line,
-                 e?e:"unknown");
-    }
-   
-    char fileName[1024];
-    /// the current Lana line or -1
-    int line;
 };
-
-/// macro producing a RuntimeException with the file's name and line number
-#define RUNT(x) RuntimeException(x,__FILE__,__LINE__)
 
 #endif /* __EXCEPTION_H */

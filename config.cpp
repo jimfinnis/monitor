@@ -26,6 +26,8 @@
 #include "widgets/momentary.h"
 #include "widgets/slider.h"
 
+#include "waypoint/waypoint.h"
+
 #include "datamgr.h"
 
 int ConfigManager::port = -1;
@@ -76,14 +78,14 @@ static RawDataBuffer *createVar(int type, const char *s, int size,float mn=0,flo
     switch(type){
     case T_NAMEFLOAT:
         if(DataManager::findFloatBuffer(s))
-            throw Exception().set("variable %s already exists at line %d of config file",s,tok.getline());
+            throw Exception(tok.getline()).set("variable %s already exists",s);
         else {
             printf("Adding var %s, size %d, range (%f,%f)\n",s,size,mn,mx);
             return DataManager::createFloatBuffer(s,size,mn,mx);
         }
         break;
     default:
-        throw Exception().set("unsupported type for variable %s at line %d of config file",s,tok.getline());
+        throw ParseException(&tok).set("unsupported type for variable %s",s);
     }
     return NULL;
 }
@@ -132,12 +134,12 @@ static void parseVars(){
             if(autoRange)
                 ((DataBuffer<float>*)b)->setAutoRange();
             break;
-        case T_NAMEBOOL:
-            throw Exception("bools not currently supported");
+        case T_BOOL:
+            throw ParseException(&tok,"bools not currently supported");
             // it's a valid type
             tok.getnextident(buf); // get name
             size = tok.getnextint(); // and size
-            createVar(T_NAMEBOOL,buf,size);
+            createVar(T_BOOL,buf,size);
             break;
         case T_LINKED:
             if(tok.getnext()!=T_OPREN)
@@ -187,10 +189,28 @@ static void parseVars(){
             break;
         case T_CCURLY:
             return;
-        default:
+        default:printf("%d\n",tok.getcurrent());
             throw UnexpException(&tok);
         }
     }
+}
+
+static void parseAudio(){
+    char warning[1024];
+    bool speech;
+    
+    DataBuffer<float> *buf = ConfigManager::parseFloatSource();
+    
+    switch(tok.getnext()){
+    case T_SAMPLE:speech=false;break;
+    case T_SPEECH:speech=true;break;
+    default:
+        throw UnexpException(&tok,"'speech' or 'sample'");
+    }
+    
+    tok.getnextstring(warning);
+    
+    getApp()->addAudio(warning,buf,speech);
 }
 
 static void parseFrame(QWidget *parent);
@@ -216,7 +236,11 @@ static void parseContainer(QWidget *parent){
             new Graph(parent,&tok);
             break;
         case T_MAP:
+#if MARBLE
             new MapWidget(parent,&tok);
+#else
+            throw ParseException(&tok,"map not supported in this build");
+#endif
             break;
         case T_STATUS:
             new StatusBlockWrapper(parent,&tok);
@@ -291,6 +315,7 @@ static void parseWindow(){
     // title if any
     char title[256];
     title[0]=0;
+    int screensetline=-1;
     
     // set this window to not inverse
     ConfigManager::inverse=false;
@@ -319,6 +344,7 @@ static void parseWindow(){
         case T_SCREEN: // move to a screen of given dimensions
             swidth = tok.getnextint();
             tok.getnextcheck(T_COMMA);
+            screensetline = tok.getline();
             sheight = tok.getnextint();
             break;
         }
@@ -346,7 +372,7 @@ static void parseWindow(){
                 break;
         }
         if(i==dt->screenCount())
-            throw Exception().set("could not find display of %d x %d",swidth,sheight);
+            throw Exception(screensetline).set("could not find display of %d x %d",swidth,sheight);
         w->move(r.topLeft());
     }
     
@@ -397,13 +423,17 @@ DataBuffer<float> *ConfigManager::parseFloatSource(){
         tok.getnextident(buf);
         b = DataManager::findFloatBuffer(buf);
         if(!b)
-            throw Exception().set("undefined variable '%s'",buf);
+            throw ParseException(&tok).set("undefined variable '%s'",buf);
         break;
     case T_EXPR:
         tok.getnextstring(buf);
         // OK, we're going to lose a reference to this, but such is life.
         // In this version we never delete expressions anyway.
-        b = (new Expression(buf))->buffer;
+        try {
+            b = (new Expression(buf))->buffer;
+        } catch(Exception& e){
+            throw Exception(e,tok.getline());
+        }
         // now parse the extra bits
         tok.getnextcheck(T_RANGE);
         float mn,mx;
@@ -428,9 +458,28 @@ DataBuffer<float> *ConfigManager::parseFloatSource(){
     return b;
 }
 
+static void parseWaypoint(){
+    tok.getnextcheck(T_OCURLY);
+    
+    wpResetDefinitions();
+    
+    for(;;){
+        char buf[256];
+        tok.getnextcheck(T_IDENT);
+        strcpy(buf,tok.getstring());
+        wpAddField(buf,tok.getnextfloat());
+        int t = tok.getnext();
+        if(t==T_CCURLY)
+            break;
+        else if(t!=T_COMMA)
+            throw UnexpException(&tok,"comma or '}'");
+    }
+        
+        
+}
+
 void ConfigManager::parseFile(QString fname){
     
-    strcpy(udpSendAddr,"127.0.0.1");
     tok.init();
     
     tok.seterrorhandler(&tokerrorhandler);
@@ -473,8 +522,11 @@ void ConfigManager::parseFile(QString fname){
         case T_SENDPORT:
             udpSendPort = tok.getnextint();
             break;
+            // the UDP client now sets its address from the first packet received
+            // but this will override it
         case T_SENDADDR:
             tok.getnextstring(udpSendAddr);
+            UDPClient::getInstance()->setAddress(udpSendAddr);
             break;
         case T_VALIDTIME:
             DataManager::dataValidInterval = tok.getnextfloat();
@@ -485,23 +537,26 @@ void ConfigManager::parseFile(QString fname){
         case T_UPDATEINTERVAL:
             graphicalUpdateInterval = tok.getnextfloat()*1000;
             break;
+        case T_AUDIO:
+            parseAudio();
+            break;
+        case T_WAYPOINT:
+            parseWaypoint();
+            break;
         default:
-            throw UnexpException(&tok,"'var', 'frame' or end of file");
+            throw UnexpException(&tok,"'var', 'frame', config data or end of file");
         }
     }
     
 }
 
 QColor ConfigManager::parseColour(QColor deflt){
+    QColor c;
     switch(tok.getnext()){
     case T_IDENT:
     case T_STRING:
-    case T_RED:
-    case T_BLUE:
-    case T_GREEN:
-    case T_YELLOW:
-    case T_BLACK:
-        return QColor(tok.getstring());
+        c = QColor(tok.getstring());
+        return c;
         break;
     case T_DEFAULT:
         return deflt;
@@ -542,12 +597,12 @@ Nudgeable *ConfigManager::getNudgeable(const char *name){
     if(nudgeables.contains(key))
         return nudgeables.value(key);
     else
-        throw Exception().set("undefined widget '%s'",name);
+        throw Exception().set("undefined widget output variable '%s'",name);
 }
 
 void ConfigManager::registerNudgeable(const char *name,Nudgeable *n){
     QString key(name);
     if(nudgeables.contains(key))
-        throw Exception().set("widget '%s' already defined",name);
+        throw Exception().set("widget output variable '%s' already defined",name);
     nudgeables.insert(key,n);
 }

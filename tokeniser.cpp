@@ -176,8 +176,12 @@ loop:
         
         char q = *p;
         p++;
-        while(*p!=q)
+        while(*p && *p!=q)
         {
+            if(strout - buf > 1024){
+                seterror(); // string too long
+                return -1;
+            }
             if(*p == 0x0a)line++;
             // string escape handing
             if(*p == '\\'){

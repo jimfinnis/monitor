@@ -22,7 +22,7 @@ float DataManager::dataValidInterval=DEFAULTDATAVALIDINTERVAL;
 DataBuffer<float> *DataManager::lastPacketIntervalBuffer,
                     *DataManager::timeSinceLastPacketBuffer;
 
-float DataManager::packetTimeOffset=0;
+double DataManager::packetTimeOffset=0;
 
 double DataManager::getTimeNow(){
     // get current time including microseconds
@@ -128,7 +128,9 @@ static void parseLine(const char *s){
             }
             break;
         case INVAR:
-            if(!isalnum(*s)){
+            if(isalnum(*s) || *s == '_'){
+               n++;
+            } else {
                 strncpy(varbuf,varstart,n);
                 varbuf[n]=0;
                 if(*s=='=')
@@ -136,7 +138,6 @@ static void parseLine(const char *s){
                 else
                     mode=WAITEQ;
             }
-            else n++;
             break;
         case WAITEQ:
             if(*s == '=')
@@ -166,6 +167,43 @@ static void parseLine(const char *s){
 }
 
 void DataManager::parsePacket(char *s,int size){
+    static char inbuf[8192];
+    static int ct=0;
+    for(int i=0;i<size;i++,s++){
+        inbuf[ct++]=*s;
+//        printf("char added: %c\n",*s);
+        if(*s=='\n' || !*s){
+            inbuf[ct-1]=0;//replace with terminator
+            // process the line
+            clearLinkedBuffersUsed(); // clear the list of linked buffers used in this packet
+//            printf("parsing line %s\n",inbuf);
+            parseLine(inbuf);
+            // perform required duplicate writes
+            checkLinkedBuffersUsed();
+            ct=0;
+            
+            // calculate packet time offset, the difference between the time on the packet and when
+            // it was received locally
+
+            packetTimeOffset = getTimeNow()-packetTime;
+
+            // write the difference interval between packet times to a special buffer
+    
+            static double lastPacketTime = -1;
+            if(lastPacketTime>=0){
+                lastPacketIntervalBuffer->write(packetTime,packetTime-lastPacketTime);
+            }
+            lastPacketTime = packetTime;
+    
+        }
+    }
+    // recalculate any expressions whose variables may have changed
+    recalcExpressions();
+    
+}
+
+/*
+void DataManager::parsePacket(char *s,int size){
     int done=0;
     
     s[size]=0;
@@ -175,6 +213,7 @@ void DataManager::parsePacket(char *s,int size){
     while(done<size){
         int len = strlen(s);
         clearLinkedBuffersUsed(); // clear the list of linked buffers used in this packet
+        printf("parsing line %s\n",s);
         parseLine(s);
         // perform required duplicate writes
         checkLinkedBuffersUsed();
@@ -199,7 +238,7 @@ void DataManager::parsePacket(char *s,int size){
     recalcExpressions();
     
 }
-
+*/
 
 // specialisation of float readInterp
 

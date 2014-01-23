@@ -222,15 +222,7 @@ protected:
     int line;
 public:
     ParseException(Tokeniser *t,const char *err=NULL):
-    Exception(err){
-        line = t->getline();
-    }
-    
-    /// return the error string
-    virtual const char *what () const throw (){
-        static char buf[1024];
-        snprintf(buf,1024,"Line %d : %s\n",line,error);
-        return buf;
+    Exception(err,t->getline()){
     }
 };
 
@@ -246,6 +238,7 @@ public:
             snprintf(error,512,"Unexpected '%s'",
                      t->getstring());
         }
+        rebuild();
     }
 };
 

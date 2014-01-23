@@ -17,8 +17,10 @@
 UDPServer::UDPServer(int port){
     listener = NULL;
     
+    // set up the receive socket
+    
     sock = new QUdpSocket(this);
-    sock->bind(QHostAddress::LocalHost,port);
+    sock->bind(port,QUdpSocket::ShareAddress);
     
     int v = 8192;
     if(::setsockopt(sock->socketDescriptor(),SOL_SOCKET,SO_RCVBUF,
@@ -44,7 +46,9 @@ void UDPServer::readPendingDatagrams(){
         quint16 senderPort;
         sock->readDatagram(datagram.data(),datagram.size(),
                            &sender,&senderPort);
+        UDPClient::getInstance()->setAddress(sender);
         listener->processUDP(datagram.data(),datagram.size());
+//        printf("Got packet %d bytes\n",datagram.size());
     }
 }
 
@@ -62,32 +66,52 @@ OutValue::OutValue(const char *n,float init,bool alw){
     always=alw;
     val=init;
     listener=NULL;
+    timeChanged = -1;
+    timeSent = 0;
 }
 
 void OutValue::set(float v){
     val = v;
     timeChanged = gettime();
-//    printf("Set called\n");
+    printf("Set called\n");
 }
 
 UDPClient *UDPClient::instance= NULL;
 
+// typically used for sending waypoint packets
+void UDPClient::send(const char *s){
+    if(!hasAddress){
+        printf("can't send : no address yet\n");
+        return; 
+    }
+    sock.writeDatagram(s,strlen(s)+1,addr,port);
+}
+
 
 void UDPClient::update(){
+    bool send=false;
+    int ct=0;
+    
+    foreach(OutValue * const &v, values){
+        if(v->always || v->timeChanged>v->timeSent)ct++;
+    }
+    if(!ct)return;
+    
     QString out;
     QTextStream str(&out);
     
     str.setRealNumberNotation(QTextStream::FixedNotation);
-    str << "time=" << gettime();
+    //we don't actually need to timestamp outbound data and its eating bandwidth
+    //str << "time=" << gettime(); 
     
-    QString s;
-    
-    if(values.size()==0)return;
     
     foreach(OutValue * const &v, values){
         if(v->always || v->timeChanged>v->timeSent){
-            printf("sending %s\n",v->name);
+            QString s;
+            printf("sending %s %s (%f > %f)\n",v->name,
+                   v->always?"alw":"not-alw",v->timeChanged,v->timeSent);
             QTextStream(&s) << " " << v->name << "=" << v->val;
+    
             out.append(s);
             v->timeSent =  gettime();
             
@@ -95,8 +119,24 @@ void UDPClient::update(){
                 v->listener->onSend();
         }
     }
+    qDebug() << out;
+    out.append("\n");
+    if(!hasAddress){
+        printf("can't send : no address yet\n");
+        return; 
+    }
+    
     sock.writeDatagram(out.toLatin1(),addr,port);
-//    qDebug() << out;
 }
 
 
+
+
+extern "C" {
+
+void udpSendFunc(const char *s) {
+    printf("Sending: %s\n",s);fflush(stdout);
+    UDPClient::getInstance()->send(s);
+}
+
+}

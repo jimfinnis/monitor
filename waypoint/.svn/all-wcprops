@@ -1,0 +1,53 @@
+K 25
+svn:wc:ra_dav:version-url
+V 73
+/staff/cos/research/!svn/ver/2643/code/boat_stuff/minty2/monitor/waypoint
+END
+udp.c
+K 25
+svn:wc:ra_dav:version-url
+V 79
+/staff/cos/research/!svn/ver/2609/code/boat_stuff/minty2/monitor/waypoint/udp.c
+END
+waypoint.c
+K 25
+svn:wc:ra_dav:version-url
+V 84
+/staff/cos/research/!svn/ver/2643/code/boat_stuff/minty2/monitor/waypoint/waypoint.c
+END
+udp.h
+K 25
+svn:wc:ra_dav:version-url
+V 79
+/staff/cos/research/!svn/ver/2597/code/boat_stuff/minty2/monitor/waypoint/udp.h
+END
+WAYPOINTPROT
+K 25
+svn:wc:ra_dav:version-url
+V 86
+/staff/cos/research/!svn/ver/2634/code/boat_stuff/minty2/monitor/waypoint/WAYPOINTPROT
+END
+build
+K 25
+svn:wc:ra_dav:version-url
+V 79
+/staff/cos/research/!svn/ver/2597/code/boat_stuff/minty2/monitor/waypoint/build
+END
+waypoint.h
+K 25
+svn:wc:ra_dav:version-url
+V 84
+/staff/cos/research/!svn/ver/2635/code/boat_stuff/minty2/monitor/waypoint/waypoint.h
+END
+test1.c
+K 25
+svn:wc:ra_dav:version-url
+V 81
+/staff/cos/research/!svn/ver/2609/code/boat_stuff/minty2/monitor/waypoint/test1.c
+END
+test2.c
+K 25
+svn:wc:ra_dav:version-url
+V 81
+/staff/cos/research/!svn/ver/2608/code/boat_stuff/minty2/monitor/waypoint/test2.c
+END
