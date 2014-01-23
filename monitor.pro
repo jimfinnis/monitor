@@ -6,13 +6,15 @@
 
 QT       += core gui network
 CONFIG  += debug
-#LIBS += -lrt
+LIBS += -lrt
+DEFINES += MARBLE
 
 TARGET = monitor
 TEMPLATE = app
 
 SOURCES += main.cpp\
     app.cpp\
+    audio.cpp\
     window.cpp\
     datamgr.cpp \
     tokens.cpp \
@@ -33,10 +35,14 @@ SOURCES += main.cpp\
     widgets/switch.cpp \
     widgets/momentary.cpp \
     widgets/slider.cpp \
-    widgets/map.cpp
+    widgets/map.cpp \
+    waypoint/waypoint.c \
+    waypointmodel.cpp\
+    waypointdialog.cpp
 
 HEADERS  += app.h \
     window.h \
+    audio.h\
     datamgr.h \
     datarenderer.h \
     qcommandline.h\
@@ -60,10 +66,16 @@ HEADERS  += app.h \
     widgets/switch.h \
     widgets/momentary.h \
     widgets/slider.h \
-    widgets/map.h
+    widgets/mapbbox.h \
+    widgets/map.h \
+    waypointdialog.h \
+    waypointmodel.h
 
 //FORMS    += mainwindow.ui
 RESOURCES += res.qrc
 INCLUDEPATH += /usr/include/marble
 
 LIBS += -L/usr/local/lib -lmarblewidget
+
+FORMS += \
+    waypointdialog.ui
