@@ -8,6 +8,7 @@
 #include <QtGui/QApplication>
 #include <QGridLayout>
 #include <QHash>
+#include <QFile>
 #include "window.h"
 #include "udp.h"
 #include "keyhandler.h"
@@ -18,6 +19,7 @@
 
 #include "datamgr.h"
 #include "audio.h"
+#include "defaults.h"
 
 /// the main application
 
@@ -59,12 +61,22 @@ public:
         emit mapreset();
     }
     
+    /// tell the logging system to start logging to a file ("capture.log" by default)
+    void startLog();
+    void stopLog();
+    
     void addAudio(const char *warning,DataBuffer<float> *buf,bool speech);
     void checkAudio();
     
     
 private:
+    
+    /// the name of the logfile
+    QString logFileName;
+    
+    /// the UDP server object, which reads data from the robot
     class UDPServer *udpServer;
+    
     /// a list of keycode->widget mappings, used by keyPress.
     QHash<int,KeyHandler *>keyHandlers;
     QList<AudioWarning *>audioWarnings;
@@ -73,6 +85,9 @@ private:
     DataBuffer<float> *wpStateBuffer;
     /// used for waypointing protocol error state
     DataBuffer<float> *wpErrorBuffer;
+    
+    /// the actual log file, which is null if we're not logging
+    QFile *logFile;
 };
 
 /// get a pointer to the Application instance

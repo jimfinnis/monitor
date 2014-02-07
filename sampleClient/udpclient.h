@@ -10,6 +10,8 @@
 #ifndef __UDPCLIENT_H
 #define __UDPCLIENT_H
 
-bool udpSend(const char *hostip, int port, const char *msg);
+/// a useful function to write a UDP packet prefixed by a timestamp
+/// and formatted with printf semantics.
+void udpwrite(const char *s,...);
 
 #endif /* __UDPCLIENT_H */

@@ -33,12 +33,13 @@
 static QString configFile("config");
 static QString waypointFile;
 
-static int port = 13231;
+static int port = DEFAULT_PORT;
 
 bool portSetInCmdLine=false;
 
 static const struct QCommandLineConfigEntry conf[] = {
     { QCommandLine::Option, 'p', "port", "UDP port number", QCommandLine::Optional},
+    { QCommandLine::Option, 'l', "log", "Log file", QCommandLine::Optional},
     { QCommandLine::Option, 'f', "file", "config file",     QCommandLine::Optional},
     { QCommandLine::Option, 'w', "waypoints", "waypoint file",     QCommandLine::Optional},
     
@@ -105,6 +106,8 @@ Application::Application(int argc,char *argv[]) : QApplication(argc,argv){
     cmdLine.setConfig(conf);
     cmdLine.enableHelp(true);
     
+    logFileName = DEFAULT_LOGFILE;
+    
     wpInit(udpSendFunc,waypointAckFunc);
     
     connect(&cmdLine, SIGNAL(switchFound(const QString &)),
@@ -143,6 +146,7 @@ Application::Application(int argc,char *argv[]) : QApplication(argc,argv){
     udpServer->setListener(this);
     
     UDPClient::getInstance()->setPort(ConfigManager::udpSendPort);
+    logFile = NULL;
 }
 
 Window *Application::createWindow(){
@@ -204,8 +208,13 @@ void Application::processUDP(char *s,int size){
         printf("Received: %s\n",s);fflush(stdout);
         wpProcessString(s);
     }
-    else
+    else {
         DataManager::parsePacket(s,size);
+        if(logFile){
+            logFile->write(s,size-1); // ignore the null...
+            logFile->write("\n",1);
+        }
+    }
 }
 
 
@@ -226,6 +235,8 @@ void Application::optionFound(const QString&s, const QVariant& v){
         port = v.toInt(&ok);
         if(!ok)throw Exception("bad port specified");
         portSetInCmdLine=true;
+    } else if(s=="log"){
+        logFileName = v.toString();
     } else if(s=="file"){
         configFile = v.toString();
     } else if(s=="waypoints"){
@@ -296,3 +307,25 @@ void Application::checkAudio(){
     }
 }
 
+void Application::startLog(){
+    if(!logFile){
+        logFile = new QFile(logFileName);
+        if(logFile->open(QIODevice::WriteOnly|QIODevice::Text)){
+            printf("Log file opened\n");
+        } else {
+            printf("---- LOG FILE FAILED TO OPEN\n");
+            delete logFile;
+            logFile = NULL;
+        }
+    }else printf("logfile already open\n");
+}
+
+void Application::stopLog(){
+    if(logFile){
+        printf("Closing logfile\n");
+        logFile->flush();
+        logFile->close();
+        delete logFile;
+        logFile =NULL;
+    }else printf("logfile already closed\n");
+}

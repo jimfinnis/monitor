@@ -1,6 +1,6 @@
 #monitor
 
-port 33333
+#port 33333
 sendport 33334
 
 #
@@ -44,6 +44,8 @@ window {
             momentary 2,0 { key "c" nudge sliderset centre title "centre"}
             momentary 3,0 { key "up" nudge sliderset up title "up"}
             momentary 4,0 { key "end" nudge sliderset max title "max"}
+            momentary 5,0 { title "startlog" special "startlog"}
+            momentary 6,0 { title "stoplog" special "stoplog"}
         }
         
     }

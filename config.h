@@ -12,6 +12,7 @@
 #include <QString>
 #include "datamgr.h"
 #include "nudgeable.h"
+#include "defaults.h"
 
 /// produced by ConfigManager::parseRect() to get widget positions etc.
 struct ConfigRect {

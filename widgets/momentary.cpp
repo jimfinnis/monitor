@@ -301,10 +301,16 @@ void Momentary::paintEvent(QPaintEvent *event){
 /// Special actions for momentaries
 
 void Momentary::doSpecial(){
+    printf("Performing %s\n",special);
     if(!strcmp(special,"quit"))
         exit(0);
     else if(!strcmp(special,"resetmaps"))
         getApp()->resetAllMaps();
+    
+    else if(!strcmp(special,"startlog"))
+        getApp()->startLog();
+    else if(!strcmp(special,"stoplog"))
+        getApp()->stopLog();
     else
         printf("Unknown special: %s\n",special);
 }

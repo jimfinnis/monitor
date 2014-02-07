@@ -2,7 +2,8 @@
 A file consist of blocks, which are either:
 \begin{itemize}
 \item variable blocks, describing the variables expected from the UDP client;
-\item window definitions, describing the windows and the frames and widgets
+\item window definitions, describing the windows and the frames and widgets within them;
+\item audio warning definitions.
 they contain;
 \item configuration options.
 \end{itemize}
@@ -13,6 +14,8 @@ file        ::= { block }
 block       ::= varblock
             |   window
             |   configoption
+            |   audio
+            |   waypointdef
 \end{v}
 
 \subsection{Configuration options}
@@ -23,20 +26,32 @@ considered to be invalid. This is useful when there is a reasonably good connect
 is a symptom of a fault. It is set by default to a very long interval (about two years.)
 \item \textbf{port} : this is the port to which the system should listen for UDP packets --- by default 13231, although
 it can be set with the \verb+-p+ option on the command line, which will override any value set in the configuration file.
-\item \textbf{sendaddr} : this string is a hostname to which UDP control packets can be sent by output widgets, such as 
-switches. By default it is the local host.
-\item \textbf{sendport} : this is the port number for UDP control packets, by default 33333.
+\item \textbf{sendport} : this is the port number for UDP control packets, by default 33333. 
+\item \textbf{sendaddr} : this is the address to which control packets are sent. Only set this if you want to override the default
+setting, which is to send to the address from which the first telemetry packet comes.
 \item \textbf{sendinterval} : the interval between sends of UDP packets for \emph{always send} widgets, by default 2 seconds.
 \item \textbf{updateinterval} : the time between ticks at which all graphics are updated, by default 2 seconds.
 \end{itemize}
 \begin{v}
 configoption::= 'port' int
-            |   'sendaddr' string
             |   'sendport' int
+            |   'sendaddr' string
             |   'validtime' float
             |   'sendinterval' float
             |   'updateinterval' float
 \end{v}
+
+\subsection{Waypoint definition}
+\label{waypointdef}
+Waypoints, by default, consist of just latitude and longitude. Extra
+fields can be added using the \textbf{waypoint} keyword. Note that
+the \textbf{lat} and \textbf{lon} fields do not need to be specified,
+they are assumed to be always present. A waypoint definition simply adds
+extra fields to these, along with default vales for new waypoints.
+\begin{v}
+waypointdef ::= 'waypoint' '{' {ident float} '}'
+\end{v}
+
 
 \subsection{Variable blocks}
 Variable blocks describe the variables which arrive on the UDP
@@ -60,7 +75,7 @@ a range (which cannot be `auto' --- see below.)
 vardef      ::= 'float' varname buffersize 'range' rangespec
             |   'linked' '(' { linkedvar ',' } linkedvar ')' buffersize
 
-linkedvar   ::= 'float' varname 'range' <float> to <float>
+linkedvar   ::= 'float' varname 'range' float 'to' float
 
 buffersize  ::= int
 varname     ::= ident
@@ -248,11 +263,47 @@ graphmod    ::= 'width' float
 \subsubsection{Maps}
 A map shows an map image with points overlaid. It consists
 of a screen position, as with other widgets,
-followed by a set of map points or vectors to render.
+followed by a set of items to render: map points, vectors or lines.
+
+There may also appear the longitude and latitude at which to initially centre the map,
+and the zoom level as specified by the height of the camera in kilometers above the ground.
+
+Finally, a pair of out values may be specified. These values are written (immediately, if `immediate' is also
+given) to the output port as a latitude, longitude pair. See the sections on momentaries and switches for
+more details of how output variables work. Note that there is no feedback system available for these variables.
 
 \begin{v}
-map         ::= 'map' pos '{' { mappoint|mapvector } '}'
+map         ::= 'map' pos '{' 
+                    [ 'centre' lat ',' lon ]
+                    [ 'height' km ]
+                    [ 'out' ident ',' ident ]
+                    [ 'immediate' ]
+                    [ 'always' ]
+                    
+                    { mappoint|mapvector|mapline|mapimage|waypointview} 
+                '}'
+km          ::= float
+lon         ::= float
+lat         ::= float
 \end{v}
+
+\textbf{Autocentering:} Each map item can be specified as the autocentering item by
+adding the word \verb+centre+ to its specification. If an autocentering item is
+given, the first datum received on that item will cause the map to center to that
+position.
+
+\textbf{Manual centre and zoom:} If a momentary button has the special ``resetmaps''
+(see Momentary Buttons, section~\ref{moms}) pressing that momentary button, or
+its mapped key, will cause the next draw to automatically center and zoom the map
+to make all its items visible. Here's an example of such a button:
+\begin{v}
+momentary 3,4 {
+    title "reset"
+    special "resetmaps"
+    key "r"
+}
+\end{v}
+
 
 \textbf{Map points} represent data as circles on the map
 whose colour and screen size depends on data sources.
@@ -266,23 +317,38 @@ be an `on' clause, which specifies how new points are drawn ---
 a new point is created whenever a new datum value
 arrives in this source.
 
-The point modifiers can be a a base colour (white by default),
-a hue clause specifying a source which can be mapped onto the 
-hue range, similar saturation and value sources, a default
-size, and a size range clause mapping a source onto a size range
-which replaces the default size. A trail size can also be specified
-to allow a number of historical points to be rendered.
+The point modifiers can be:
+\begin{itemize}
+\item a base colour (white by default),
+\item a default size,
+\item a size range clause mapping a source onto a size range
+(which replaces the default size,)
+\item a hue clause specifying a source which can be mapped onto the 
+hue range,
+\item similar saturation and value sources,
+\item a trail size to allow a number of historical points to be rendered,
+\item a format string and a source to render with that string --- for example 
+\begin{v}
+label "waypoint %.0f" var waypoint_number
+\end{v}
+will render the waypoint number variable as an integer. You may need
+to be careful with this, since the value at the label may be interpolated
+if it is not present in every datum.
+\end{itemize}
 
 \begin{v}
 mappoint    ::= 'point' '{' location [{ pointmod }] 'on' source '}'
 
 pointmod    ::= 'colour' colour
+            |   'size' float
+            |   'sizerange' minsize maxsize source
+
             |   'hue' source
             |   'saturation' source
             |   'value' source
-            |   'size' float
+
             |   'trail' int
-            |   'sizerange' minsize maxsize source
+            |   'label' string source
 
 location    ::= lat ',' long
 lat         ::= source
@@ -292,7 +358,8 @@ long        ::= source
 \textbf{Map vectors} are similar to points, but represent data
 by a line coming from a point on the map. The line's starting location,
 length (in pixels), colour and width can be modified by data sources
-in a similar way to the size and colour of a point.
+in a similar way to the size and colour of a point. The `clip' word specifies
+that the vector is only drawn when its start point is visible within the widget.
 
 \begin{v}
 mapvector    ::= 'vector' '{' location [{ vectormod }] 'on' source '}'
@@ -306,26 +373,96 @@ vectormod    ::= 'colour' colour
             |   'length' float
             |   'lengthrange' minsize maxsize source
             |   'trail' int
+            |   'clip'
 
 location    ::= lat ',' long
 lat         ::= source
 long        ::= source
 \end{v}
 
+\textbf{Map lines} are single lines which link two coordinates on the map.
+Their width and colour can be specified in the same way as vectors.
+One set of coordinates is the start, one is the end. As with all map items, an `on'
+source is required to determine which data should have a line drawn --- the actual values
+are interpolated from the time of the most recent datum for that source. The `clip' word specifies
+that the line is only drawn when both end points are visible within the widget.
+
+\begin{v}
+mapline ::=     'line' '{' 
+                'start' lat ',' long
+                'end' lat ',' long
+                [{ linemod }]
+                'on' source 
+                '}'
+
+lat         ::= source
+long        ::= source
+
+linemod     ::= 'colour' colour
+            |   'hue' source
+            |   'saturation' source
+            |   'value' source
+            |   'width' float
+            |   'widthrange' minsize maxsize source
+            |   'clip'
+\end{v}
+
+\textbf{Map images} are bitmaps which can be overlayed on the map,
+once you've worked out the correct registration. Multiple images can
+be used; they will be rendered in the order they are described.
+The format for a map image block is:
+\begin{v}
+mapimage    ::= 'image' '{'
+                    string
+                    { 'alpha' float }
+                    'pos' float,float
+                    'image' float,float
+                    'pos' float,float
+                    'image' float,float
+                    '}'
+\end{v}
+Each pos/image pair specifies a latitude and longitude (after ``pos'') and a
+pair of pixel coordinates within the image corresponding to that point (after ``image''.)
+The optional alpha clause specifies how opaque the map is rendered, from 0 to 1.
+An example:
+\begin{v}
+image {
+    "aberystwyth.png"
+    alpha 0.5  # for a half-transparent image
+                
+    # point 1 (Pendinas monument)
+    pos 52.40163,-4.08237   image 187,411
+    # point 2 (The Clarach junction in Bow Street)
+    pos 52.44202,-4.02809   image 500,23
+}   
+
+\end{v}
+
+\subsubsection{Waypoint renderer}
+\label{waypointrdr}
+Waypoints are shown on the map if the map has a waypoint clause.
+This currently has no options, and so appears as
+\begin{v}
+waypoint {}
+\end{v}
+See sections~\ref{waypointdef} and \ref{waypointmgr} for more
+details.
+
+
 \subsubsection{Status widgets}
 A status widget consists of a position, a grid size specification
 (giving the number of rows and columns of indicators in the grid)
-and then a set of status indicators, which currently are all
-of type \emph{floatrange.} 
+and then a set of status indicators, which of either 
+of type \emph{floatrange} or the simpler type \emph{bool}.
 
 \begin{v}
 status      ::= 'status' pos '{' 
                 'size' int ',' int
-                { floatrange }
+                { floatrange|boolstat }
                '}'
 \end{v}
 
-Each floatrange indicator consists of `floatrange', and a specification
+\textbf{Floatrange indicators} consist of `floatrange', and a specification
 in curly brackets containing a grid position, a title, a source
 and then a set of bands. Optionally there can then follow a set
 of \emph{when} clauses, which specify alternate title strings
@@ -339,7 +476,8 @@ floatrange  ::= 'floatrange' '{'
                     [{ 'when' statcolour string }]
                 '}'
 \end{v}
-The bands in a status indicator consist of `bands' followed by
+The bands in a status indicator consist of `bands' followed by a position
+within the grid, a title string which appears in the box, and
 a set of band specifications, each of which is a less-than sign,
 a float, and a colour. When a value is received on the source,
 is goes through each of these bands is first, and the first for
@@ -355,7 +493,27 @@ fullbands   ::= { '<' float statcolour }
                 'else' statcolour
 statcolour  ::= 'red' | 'green' | 'blue' | 'black' | 'yellow'
 \end{v}
-\todo{BOOL blocks are missing from the docs}
+
+\textbf{Bool indicators} are used when a source contains a value which is negative for false
+and positive for true. They consist of
+`bool' and a specification in curly brackets
+containing of the grid position and title, followed by a source specification.
+This can then be followed by colour values for true and false, with the defaults
+being green and black respectively.
+\begin{v}
+boolstat    ::= 'bool' '{' 
+                    'pos' int ',' int
+                    'title' string
+                    source
+                    { 'false' statcolour }
+                    { 'true' statcolour }
+                 '}'
+\end{v}
+The convention of ``negative is false, positive is true'' is that supported by logical
+and comparison operators in the expression parser and bitfield system.
+
+\todo{Bitfield system}
+
                
 \subsubsection{Compass}
 The compass widget simply shows a heading. Its source is a value
@@ -375,40 +533,95 @@ send data out via a UDP packet. Switches can operate with or without a
 compared with the value of this source and any mismatch indicated. Without a
 feedback source, the packets are sent from the switch with no indication of
 whether they were successfully received. The actual data sent (and received)
-by the switch are booleans in the form of floats, 0 or 1.
+by the switch are booleans in the form of floats, 0 or 1. In feedback
+mode, the switch will attempt to read an initial value from the server.
 
-In non-feedback mode, the switch has two states:
+To specify a feedback source, use the `var' clause, either with a variable name
+or with an expression\footnote{It's called `var' for historical reasons; in early versions expressions were not permitted.}.
+
+In non-feedback mode, the switch has three states:
 \begin{itemize}
-\item \textbf{red} corresponds to 0
-\item \textbf{green} corresponds to 1
+\item \textbf{red} corresponds to 0,
+\item \textbf{green} corresponds to 1,
+\item \textbf{dark grey} means the data is queued for sending but has not yet been sent (see section~\ref{subhowout}.)
 \end{itemize}
-In feedback mode, the switch has four states:
+In feedback mode, the switch has four states --- the colours indicate these states as well
+as the on/off state of the switch in the OK state:
 \begin{itemize}
-\item \textbf{red} corresponds to 0 sent and acknowledged;
-\item \textbf{green} corresponds to 1 sent and acknowledged;
-\item \textbf{grey} means the value has been changed locally, but has not yet been sent. You can set \emph{immediate} to
+\item \textbf{yellow diagonal crosshatch} (INIT) means no value has been received from the server,
+so we don't know what value the server is currently set to.
+\item \textbf{red} (OK) corresponds to 0 received (or acknowledged);
+\item \textbf{green} (OK) corresponds to 1 received (or acknowledged);
+\item \textbf{grey} (UNSENT) means the value has been changed locally, but has not yet been sent. You can set \emph{immediate} to
 make sure a value is sent immediately on change;
-\item \textbf{diagonal crosshatch} means a value has been sent (indicated by the colour) but a feedback value has
+\item \textbf{diagonal crosshatch} (UNACK) means a value has been sent (indicated by the colour) but a feedback value has
 not yet been received;
-\item \textbf{full crosshatch} means a value has been sent (indicated by the colour) and a feedback value has
+\item \textbf{full crosshatch} (BADACK) means a value has been sent (indicated by the colour) and a feedback value has
 been received, but the two do not match --- an error condition.
 \end{itemize}
+The switch can only be clicked in OK or BADACK states. Clicking in OK will toggle the switch and
+send the new value, clicking in BADACK will clear the error and set the state of the switch
+to that reported by the server. The state diagram in figure~\ref{switchstates} shows this
+more clearly.
+\begin{figure}[ht]
+\center
+\includegraphics[width=4in]{stateSwitch.pdf}
+\caption{State diagram for switches}
+\label{switchstates}
+\end{figure}
+See Section~\ref{secclient} for details of how to write remote code to deal with switches.
+
 Switch specifications consist of a position, the name of an
 output variable to use in the send packets, a title,
 an an optional feedback source. There may also be the word \verb+always+, in which case the value for this switch
 is always sent, whenever any other output widget changes and when the send interval elapses; and the word `immediate'
 indicating that when the switch is pressed, a UDP send update should be done immediately. This will result in the
-switch's data being sent, as well as any data for other `always' output widgets.
+switch's data being sent, as well as any data for other `always' output widgets. The word 'button' will make the switch
+look more like a momentary button than a crude toggle. It's a purely visual change.
+
+If `integer' is set, the switch will round all values it sends --- this is important if the value is converted to an integer
+at the remote end, because otherwise the feedback value will not match the original float value of the slider.
 \begin{v}
 switch      ::= 'switch' pos '{'
                     'out' ident
+                    'button'
+                    [ 'size' int ',' int]
                     [ 'title' string ]
                     [ source ]
+                    [ 'set' float ]
                     [ 'always' ]
                     [ 'immediate' ]
+                    [ 'integer' ]
                     [ 'key' keyname ]
+                    [ 'colours' oncolour ',' offcolour ]
                 '}'
+
+oncolour    ::= colour
+offcolour   ::= colour
 \end{v}
+
+\subsubsection{Multi-way switches with `set'}
+It's often necessary to be able to set a control variable to multiple discrete values --- for example, an integer indicating an
+operating mode. To support this, switches can have a `set' value which they send instead of the normal `toggle' operation. The differences
+are:
+\begin{itemize}
+\item Instead of toggling the value between 0 and 1 and sending it when clicked, `set' switches always send their `set' value.
+\item When feedback arrives on a set switch in the OK state, the switch value is set to off if the feedback does not match the set value,
+and on if it does.
+\item When feedback arrives on a set switch in the BADACK state, the switch is set to on if the feedback agrees, and BADACK if it doesn't (i.e.
+the normal behaviour.)
+\end{itemize}
+We can therefore manage multiple values with a set of switches, all controlling the same control variable with different values. For example,
+consider a three state system: OFF, HOLD and RUN. Let's assume that the integer values for these states are 0, 1 and 2 respectively; and that
+the control and feedback telemetry variables are both called `runstate'. We can set up switches to control the state like this:
+\begin{v}
+    switch 0,0 { button out runstate var runstate set 0 title "OFF"}
+    switch 1,0 { button out runstate var runstate set 1 title "HOLD"}
+    switch 2,0 { button out runstate var runstate set 2 title "RUN"}
+\end{v}
+If we click HOLD, \texttt{runstate=1} is sent. Remotely, runstate will be set to 1 and feedback
+sent back to the monitor. The OFF and RUN switches will both be set to off, because the feedback
+does not agree with their set value; and the HOLD switch will be set to on, because it does.
 
 \subsubsection{A note on keys}
 Note that a switch can have a key mapped onto it. The key name is a string (delimited by quotes)
@@ -424,36 +637,75 @@ left & right & \\
 
 
 \subsubsection{Momentary}
-A momentary button is an output widget, similar to a switch. It also has a feedback source, in a similar manner to a switch ---
-the button's feedback is valid if it is above 0.5 and the packet setting it arrives after the button was pressed.
+\label{moms}
+A momentary button is an output widget, similar to a switch. It also has a
+feedback source, in a similar manner to a switch --- the button's feedback is
+valid if it is above 0.5 and the packet setting it arrives after the button
+was pressed. You can change the condition by using a boolean expression, of course.
+To specify a feedback source, use the `var' clause, either with a variable name
+or with an expression.
+
+A momentary button sets its output variable to 1 by default, but that can be changed
+by using a `set' clause.
 
 Momentary buttons use a similar colour scheme to that of a switch:
 \begin{itemize}
-\item \textbf{green} means the button is ready;
-\item \textbf{red} means the button has recently been pressed and acknowledged,
-and will soon return to the green state (this a purely cosmetic state;)
-\item \textbf{grey} means the button has been pressed, but data has not yet been sent. You can set \emph{immediate} to
+\item \textbf{light grey} (OK) means the button is ready;
+\item \textbf{green} (WAIT) means the button has recently been pressed and acknowledged (if in feedback mode),
+and will soon return to the ready state (this a purely cosmetic state;)
+\item \textbf{dark grey} (UNSENT) means the button has been pressed, but data has not yet been sent. You can set \emph{immediate} to
 make sure a value is sent immediately on change;
-\item \textbf{diagonal crosshatch} means the press has been sent (indicated by the colour) but a feedback value has
-not yet been received;
-\item \textbf{full crosshatch} means a value has been sent (indicated by the colour) and a feedback value has
-been received, but the two do not match (i.e. the value read is less than 0.5.)
+\item \textbf{diagonal crosshatch} (UNACK) means the press has been sent (indicated by the colour) but a feedback value has
+not yet been received --- if this persists it can be cleared with a click;
+\item \textbf{full crosshatch} (BADACK) means a value has been sent (indicated by the colour) and a feedback value has
+been received, but the two do not match (i.e. the value read is less than 0.5.) In this state, the button can be reset by clicking
+it again, but this will \emph{not result in another send.} It simply clears the error state.
 \end{itemize}
-Another use of momentary buttons is to `nudge' widgets controlling continuous values, such as sliders. Instead of a \emph{out} clause
-with an output
-variable name, the word \emph{nudge} and the name of the output variable of a slider is used, along with an action: \emph{up,}
-\emph{down} and so on. A feedback variable is not permitted with nudge buttons.
+If there is no feedback source, the button will go straight to OK once the
+value is sent. The button can only be clicked in OK, UNACK and BADACK states: clicking in
+OK will send the value, clicking in BADACK will, as stated above, clear the error.
+The state diagram in figure~\ref{momstates} shows this more clearly.
+\begin{figure}[ht]
+\center
+\includegraphics[width=4in]{stateMomentary.pdf}
+\caption{State diagram for momentary buttons}
+\label{momstates}
+\end{figure}
+
+
+See Section~\ref{secclient} for details of how to write remote
+code to deal with momentary buttons.
+
+Another use of momentary buttons is to `nudge' widgets controlling continuous
+values, such as sliders. Instead of a \emph{out} clause with an output
+variable name, the word \emph{nudge} and the name of the output variable of a
+slider is used, along with an action: \emph{up,} \emph{down} and so on. A
+feedback source is not permitted with nudge buttons.
 \begin{v}
-switch      ::= 'momentary' pos '{'
+momentary  ::= 'momentary' pos '{'
                     ( 'out' ident |
                       'nudge' name ('up'|'down'|'centre'|'min'|'max') )
                     [ 'title' string ]
                     [ source ]
                     [ 'always' ]
+                    [ 'set' float]
+                    [ 'size' int ',' int]
                     [ 'immediate' ]
                     [ 'key' keyname ]
+                    [ 'special' string ]
                 '}'
 \end{v}
+
+
+\textbf{Special actions:} If the ``special'' string is given, the button will
+perform a special action, hardwired into the code. Any other specified action,
+such as an output to a variable or a nudge, will be ignored. The specials are
+currently:
+\begin{itemize}
+\item \textbf{quit} will quit the program
+\item \textbf{resetmaps} will cause all maps to reset their bounding boxes to contain their items
+\end{itemize}
+
 
 \subsubsection{Slider}
 Sliders are output widgets which control continuous values. They
@@ -463,22 +715,32 @@ is a floating point value over a specified range.
 A feedback source can also be specified, which is compared against
 the value which has been sent. The two values must be within
 a user-configurable epsilon of each other for a match (currently 0.001).
+To specify a feedback source, use the `var' clause, either with a variable name
+or with an expression.
 
 The handle of the slider shows:
 \begin{itemize}
-\item \textbf{white} for OK;
-\item \textbf{grey} means data not yet sent;
-\item \textbf{diagonal crosshatch} means data sent but no acknowledgement;
-\item \textbf{full crosshatch} means data sent, but the received value is not
+\item \textbf{dark yellow} (INIT) a feedback value exists but no value has yet been received
+from the server to initialise the slider (one may have been sent if there is an `initial'
+clause.)
+\item \textbf{white} (OK) where the value matches the value on the server (or we
+don't have a feedback source);
+\item \textbf{grey} (UNSENT or DRAGGING) means data not yet sent or we're actively
+dragging the slider, about to set a new value;
+\item \textbf{diagonal crosshatch} (UNACK) means data sent but no acknowledgement;
+\item \textbf{full crosshatch} (BADACK) means data sent, but the received value is not
 yet within epsilon of the sent value. This is not necessarily an error,
 it may take some time for the physical system to catch up.
 \end{itemize}
+In any state, the slider will move by itself as new data comes in with new values; also it's possible
+to drag the slider to send a new value in any state (except INIT).
+
 See ``Momentary'' for how to create button widgets which can nudge the slider.
 
 It should be noted that \emph{immediate} with a slider works a little
 differently from other widgets: the value will only be sent with the slider
 handle is released. This is to avoid flooding the network with UDP packets as
-the slider moves. However, using a autorepeat keys on a key-mapped momentary
+the slider moves. However, using a autorepeat key on a key-mapped momentary
 to nudge a slider which is set to immediate will result in many UDP packets
 being sent!
 
@@ -487,6 +749,7 @@ slider      ::= 'slider' pos '{'
                     'out' ident
                     'range' float 'to' float
                     'initial' float
+                    'var' source
                     [ 'title' string ]
                     [ source ]
                     [ 'always' ]
@@ -494,6 +757,37 @@ slider      ::= 'slider' pos '{'
                     [ 'horizontal' | 'vertical' ]
                 '}'
 \end{v}
+The state machine for the slider is shown in Figure~\ref{sliderstate}. Note how
+almost any state will transition to DRAGGING if the slider is pressed --- this means
+that many packets can be sent, even from UNACK and BADACK states.
+
+\begin{figure}[ht]
+\center
+\includegraphics[width=4in]{stateSlider.pdf}
+\caption{Slider state diagram}
+\label{sliderstate}
+\end{figure}
+
+\section{Audio warnings}
+These have the syntax:
+\begin{v}
+audio       ::= 'audio' source ( 'sample' | 'speech') string
+\end{v}
+They play either an audio sample or use text-to-speech to read a phrase whenever the source is above zero.
+They will not trigger if an audio been played within the last two seconds. The checks are made every graphical
+update tick --- by default two seconds, but changed with \texttt{updateinterval.} 
+
+Typically, an expression source will be used. For example:
+\begin{v}
+    audio expr "a>0" range auto sample "warning.wav"
+\end{v}
+or 
+\begin{v}
+    audio expr "speed<5 && power>10" range auto speech "speed low and power high"
+\end{v}
+Audio warnings are currently implemented by using \verb+fork()+ and \verb+exec()+ 
+to run \verb+/bin/espeak+ or \verb+/bin/aplay+. This is because audio APIs
+in Qt are large and unwieldy, and often don't work.
 
 
 
@@ -501,10 +795,15 @@ slider      ::= 'slider' pos '{'
 \section{Other notes}
 
 \subsection{How output data is sent}
-Whenever the output update runs, output data is sent for those widgets which are either have changed since the
-last send, or are set to \emph{always send}. The output update is run every \emph{sendinterval} seconds, which defaults
-to 2 seconds but can be set by the configuration file. In addition, widgets set as \emph{immediate} cause the output
-update to run whenever they are changed.
+\label{subhowout}
+Whenever the output update runs, output data is sent for those widgets which
+are either have changed since the last send, or are set to \emph{always send}.
+The output update is run every \emph{sendinterval} seconds, which defaults to
+2 seconds but can be set by the configuration file. In addition, widgets set
+as \emph{immediate} cause the output update to run whenever they are changed.
+
+Packets are sent to the same address the telemetry packets are coming from.
+
 
 \subsection{Special variables}
 Some variables are created at startup:
@@ -515,3 +814,68 @@ was received. It is updated every two seconds or so.
 packet and the packet before that. It is updated on every packet.
 \end{itemize}
 
+\section{Writing remotes}
+\subsection{Telemetry}
+The simple case is a telemetry-only remote, which just sends information to the monitor. This should send lines consisting
+of a timestamp in seconds (preferably a UNIX timestamp) and variable values, all as floats in key=value pairs, terminated with
+a line feed:
+\begin{v}
+time=1368451979.922781 a=33.326191 b=1.000000
+time=1368451980.823072 a=33.339432
+time=1368451981.723353 a=33.352539 b=2.000000
+\end{v}
+Only those variables which change at each tick need to be sent --- this is even true in the case of linked variables such as coordinate
+pairs. Each line should be sent as a UDP packet --- currently we're using code like this:
+\begin{v}
+bool udpSend(const char *hostip, int port, const char *msg){
+    sockaddr_in servaddr;
+    int fd = socket(AF_INET,SOCK_DGRAM,0);
+    if(fd<0){
+        perror("cannot open socket");
+        return false;
+    }
+    
+    bzero(&servaddr,sizeof(servaddr));
+    servaddr.sin_family = AF_INET;
+    servaddr.sin_addr.s_addr = inet_addr(hostip);
+    servaddr.sin_port = htons(port);
+    if (sendto(fd, msg, strlen(msg)+1, 0, // +1 to include terminator
+               (sockaddr*)&servaddr, sizeof(servaddr)) < 0){
+        perror("cannot send message");
+        close(fd);
+        return false;
+    }
+    close(fd);
+    return true;
+}
+\end{v}
+
+\subsection{Control}
+Controlling a remote system is a little more complex. We need to consider issues of latency and dropped packets carefully (see
+the above sections on the slider, switch and momentary button to see how the controls work.) Data is sent from the monitor
+to a UDP server on the remote, which optionally sends feedback information as part of the standard telemetry.
+
+The control data packets are similar to the telemetry packets: a set of
+key-value pairs, but no timestamp. They change a different set of values on
+the remote from those monitored by telemetry. Control data is sent regularly
+(if any values have changed) and can also be sent when immediate is set on a
+control.
+
+\subsubsection{Framework}
+There is a framework for control data in the \texttt{sampleClient} directory, in \texttt{udpserver.h/.cpp}. This defines
+a \texttt{UDPServer} class which can be used to create control variables, get values from them, and periodically poll for changes.
+
+There are three kinds of control:
+\begin{itemize}
+\item toggle switch --- controls a 0/1 value which is toggled and resent each time the switch is flipped;
+\item momentary button --- the same value (the ``set'' value, 1 by default) is sent as the value of the control variable every time the button is pressed;
+\item slider --- controls a continuously varying floating point value, sent every time the slider is moved.
+\end{itemize}
+
+\subsubsection{Feedback}
+It's a good idea to use a telemetry variable to shadow the control variables, sending any changes to the control variables
+back to the monitor. This can be a variable of the same name, or a different name. It's also possible to use an expression as a feedback
+value in the monitor.
+
+\subsubsection{An example using UDPServer}
+See \texttt{sampleClient/test.cpp} for a full example.

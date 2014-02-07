@@ -59,6 +59,9 @@ void UDPServer::parseLine(const char *s){
     int n;
     enum { WAITVAR,INVAR,WAITEQ,WAITVAL,INVAL } mode;
     
+    
+//    if(0==(rand()%5))return; // for debugging, skips random packets
+    
     mode = WAITVAR;
     
     char varbuf[256];
@@ -102,11 +105,11 @@ void UDPServer::parseLine(const char *s){
                 mode=WAITVAR;
                 
                   printf("Got [%s = %f]\n",varbuf,atof(valbuf));
-                
-                
-                float *p = findVar(varbuf);
-                if(p) *p=atof(valbuf);
-                else printf("CANNOT FIND VARIABLE %s\n",varbuf);
+                if(strcmp(varbuf,"time")){
+                    float *p = findVar(varbuf);
+                    if(p) *p=atof(valbuf);
+                    else printf("CANNOT FIND VARIABLE %s\n",varbuf);
+                }
             }
             else n++;
             break;

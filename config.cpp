@@ -31,7 +31,8 @@
 #include "datamgr.h"
 
 int ConfigManager::port = -1;
-int ConfigManager::udpSendPort = 33333;
+int ConfigManager::udpSendPort = DEFAULT_SENDPORT;
+
 char ConfigManager::udpSendAddr[256];
 float ConfigManager::sendInterval = 2;
 int ConfigManager::graphicalUpdateInterval=2000;

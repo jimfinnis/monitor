@@ -22,9 +22,14 @@
 
 # words
 
+audio   :   T_AUDIO
+sample   :   T_SAMPLE
+speech   :   T_SPEECH
+
 false   :   T_FALSE
 true    :   T_TRUE
 bool    :   T_BOOL
+integer :   T_INTEGER
 else    :   T_ELSE
 var     :   T_VAR
 expr    :   T_EXPR
@@ -32,7 +37,6 @@ window  :   T_WINDOW
 frame   :   T_FRAME
 linked  :   T_LINKED
 float   :   T_NAMEFLOAT
-bool    :   T_NAMEBOOL
 pos     :   T_POS
 centred :   T_CENTRED
 centered :   T_CENTERED
@@ -71,16 +75,12 @@ sizerange:  T_SIZERANGE
 trail   :   T_TRAIL
 time    :   T_TIME
 width   :   T_WIDTH
+height  :   T_HEIGHT
 floatrange: T_FLOATRANGE
 when:       T_WHEN
 default:    T_DEFAULT
 darken  :   T_DARKEN
-red     :   T_RED
-blue    :   T_BLUE
-yellow  :   T_YELLOW
-black   :   T_BLACK
-green   :   T_GREEN
-
+button  :   T_BUTTON
 radians :   T_RADIANS
 degrees :   T_DEGREES
 length  :   T_LENGTH
@@ -91,6 +91,10 @@ fontscale: T_FONTSCALE
 port    :   T_PORT
 sendport:   T_SENDPORT
 sendaddr:   T_SENDADDR
+label:  T_LABEL
+start: T_START
+end: T_END_WD
+clip:T_CLIP
 
 immediate:  T_IMMEDIATE
 key : T_KEY
@@ -112,3 +116,10 @@ nudge:T_NUDGE
 up:T_UP
 down:T_DOWN
 centre:T_CENTRE
+line:T_LINE
+arrow:T_ARROW
+angle:T_ANGLE
+special:T_SPECIAL
+waypoint:T_WAYPOINT
+image:T_IMAGE
+alpha:T_ALPHA
