@@ -15,6 +15,7 @@
 #include <time.h>
 
 #include "udpclient.h"
+#include "udpserver.h"
 
 
 int main(int argc,char *argv[]){
