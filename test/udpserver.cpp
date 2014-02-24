@@ -43,12 +43,37 @@ void UDPServer::stop(){
         close(fd);
 }
 
+void UDPServer::parseMessage(const char *s){
+    char key[64],val[64],*p;
+    while(*s){
+        // skip spaces
+        while(*s && isspace(*s))
+            s++;
+        // read the key name
+        p=key;
+        while(*s && *s!='=' && (p-key)<64)
+            *p++=*s++;
+        *p=0;
+        if(!*s)
+            break;// invalid, key at end of string
+        
+        s++; // skip the '='
+        // read the value
+        p=val;
+        while(*s && !isspace(*s) && (p-val)<64))
+            *p++=*s++;
+        *p=0;
+        
+        listener->onKeyValuePair(key,atof(val));
+    }
+}
+
 void UDPServer::poll(){
     char buf[1024];
     sockaddr_in cliaddr;
     socklen_t len = sizeof(cliaddr);
     int n = recvfrom(fd,buf,1024,MSG_DONTWAIT,(struct sockaddr *)&cliaddr,&len); 
     if(n>0 && listener){
-        listener->onMessage(buf);
+        parseMessage(buf);
     }
 }

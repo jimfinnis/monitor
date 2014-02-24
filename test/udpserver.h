@@ -11,13 +11,15 @@
 
 class UDPServerListener {
 public:
-    virtual void onMessage(const char *s);
+    /// override this to parse key/value pairs in messages
+    virtual void onKeyValuePair(const char *s,float v)=0;
 };
 
 class UDPServer {
 private:
     int fd;
     UDPServerListener *listener;
+    void parseMessage(const char *s);
 public:
     UDPServer();
     int start(int port);
