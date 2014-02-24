@@ -1,6 +1,13 @@
 import sys
 import os
 
+# generate tokens from a token list into a .h and .cpp file
+# Usage: gentoks INNAME OUTNAME
+# and outfile will be appended with .cpp and .h
+
+# Will also generate hkwords, containing keyword highlighting commands
+# for microemacs.
+
 infile = sys.argv[1]
 outfile = sys.argv[2]
 

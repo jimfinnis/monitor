@@ -13,6 +13,8 @@
 #include <unistd.h>
 #include <errno.h>
 #include <strings.h>
+#include <stdlib.h>
+#include <ctype.h>
 #include "udpserver.h"
 
 UDPServer::UDPServer(){
@@ -45,6 +47,7 @@ void UDPServer::stop(){
 
 void UDPServer::parseMessage(const char *s){
     char key[64],val[64],*p;
+    printf("msg: %s\n",s);
     while(*s){
         // skip spaces
         while(*s && isspace(*s))
@@ -60,7 +63,7 @@ void UDPServer::parseMessage(const char *s){
         s++; // skip the '='
         // read the value
         p=val;
-        while(*s && !isspace(*s) && (p-val)<64))
+        while(*s && !isspace(*s) && (p-val)<64)
             *p++=*s++;
         *p=0;
         
