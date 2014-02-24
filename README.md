@@ -24,3 +24,7 @@ A highly configurable Qt program for monitoring data being sent by key/value UDP
 *You don't need to send every variable in every packet, but there must always be "time" which must be a UNIX timestamp.
         
 
+## More documentation
+* The syntax of config files is fully documented in *doc/main.pdf*
+* The waypoint transmission protocol is documented in *waypoint/WAYPOINTPROTO*
+
