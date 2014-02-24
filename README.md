@@ -4,11 +4,11 @@ A highly configurable Qt program for monitoring data being sent by key/value UDP
 
 ##Dependencies
 * You'll need Qt4 and qmake and all that jazz.
-* To build the mapping widgets, you'll also need MarbleWidget (on Ubuntu, that's the '''libmarble-dev''' package).
+* To build the mapping widgets, you'll also need MarbleWidget (on Ubuntu, that's the *libmarble-dev* package).
 
 ## Building
-* Run "qmake-qt4 monitor.pro" to build the makefile if you need to.
-* Then run '''make'''to build the code.
+* Run **qmake-qt4 monitor.pro** to build the makefile if you need to.
+* Then run **make** to build the code.
 
 ## Running
 * Once it's built, run
