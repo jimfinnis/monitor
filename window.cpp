@@ -20,9 +20,3 @@ Window::~Window(){
 }
 
 
-void Window::keyPressEvent(QKeyEvent *event){
-    if(!getApp()->keyPress(event->key()))
-        QMainWindow::keyPressEvent(event);
-    
-}
-

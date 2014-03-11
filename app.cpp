@@ -19,6 +19,7 @@
 #include <QDebug>
 #include <QVariant>
 #include <QThread>
+#include <QKeyEvent>
 
 #include "app.h"
 #include "window.h"
@@ -97,7 +98,11 @@ void Application::ackMessage(){
 Application::Application(int argc,char *argv[]) : QApplication(argc,argv){
     DataManager::init();
     StatusColour::initColours();
-
+    
+    for(int i=0;i<10;i++)
+        keyWindow[i]=NULL;
+    
+    installEventFilter(this);
     
     wpStateBuffer = DataManager::createFloatBuffer("wpstate",100,0,100);
     wpErrorBuffer = DataManager::createFloatBuffer("wperror",100,0,100);
@@ -329,3 +334,23 @@ void Application::stopLog(){
         logFile =NULL;
     }else printf("logfile already closed\n");
 }
+
+bool Application::eventFilter(QObject *obj, QEvent *ev){
+    if(ev->type() == QEvent::KeyPress){
+        int k = ((QKeyEvent *)ev)->key();
+        if(k>=Qt::Key_0 && k<=Qt::Key_9){
+            k-=Qt::Key_0;
+            printf("key %d got\n",k);
+            Window *w = keyWindow[k];
+            if(w){
+                w->raise();
+                w->activateWindow();
+                w->showFullScreen();
+                return true;
+            }
+        }
+        return keyPress(k);
+    }
+    return QApplication::eventFilter(obj,ev);
+}
+

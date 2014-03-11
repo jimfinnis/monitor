@@ -315,6 +315,10 @@ static void parseWindow(){
     int swidth=-1,sheight=-1;
     // title if any
     char title[256];
+    // "tab" number - used to generate a shortcut to pull this window
+    // to the front
+    int number=-1;
+    
     title[0]=0;
     int screensetline=-1;
     
@@ -330,6 +334,9 @@ static void parseWindow(){
             break;
         case T_TITLE:
             tok.getnextstring(title);
+            break;
+        case T_NUMBER:
+            number = tok.getnextint();
             break;
         case T_INVERSE:
             ConfigManager::inverse=true;
@@ -352,7 +359,9 @@ static void parseWindow(){
     }
         
     // create a window
-    QMainWindow *w = getApp()->createWindow();
+    Window *w = getApp()->createWindow();
+    if(number>=0)
+        getApp()->setWindowKey(number,w);
     ConfigManager::setStyle(w);
     // and parse the contents
     parseContainer(w->centralWidget());
@@ -379,13 +388,14 @@ static void parseWindow(){
     
     
     // finally show the window and resize if required
-    if(fullScreen)
+    if(fullScreen){
         w->showFullScreen();
-    else {
+    } else {
         if(width>0)
             w->resize(width,height);
         w->show();
     }
+    w->activateWindow();
 }
 
 ConfigRect ConfigManager::parseRect(){

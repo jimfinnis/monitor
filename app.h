@@ -66,8 +66,16 @@ public:
     void stopLog();
     
     void addAudio(const char *warning,DataBuffer<float> *buf,bool speech);
+    /// periodic check for audio warnings
     void checkAudio();
     
+    /// set a key to switch to a window - n between 0 and 9.
+    void setWindowKey(int n,Window *w){
+        keyWindow[n]=w;
+    }
+    
+protected:
+    bool eventFilter(QObject *obj, QEvent *ev);
     
 private:
     
@@ -88,6 +96,9 @@ private:
     
     /// the actual log file, which is null if we're not logging
     QFile *logFile;
+    
+    /// windows to be switched to on keypress
+    Window *keyWindow[10];
 };
 
 /// get a pointer to the Application instance
