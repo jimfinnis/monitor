@@ -287,7 +287,7 @@ Switch::Switch(QWidget *parent,Tokeniser *t) : QWidget(NULL) {
     
     renderer = buf ? new DataRenderer(main,buf) : NULL;
     
-    if(setVal && !hasFeedback())
+    if(hasSetVal && !hasFeedback())
         throw ParseException(t,"a switch with `set' must have a feedback source");
     
     value = false;
@@ -329,6 +329,11 @@ void Switch::checkForNewData(){
                 lastData=d->d;
                 machine.get().onNewData(this,d->d);
             }
+        } else {
+            // data is nonexistent or state, head to the INIT
+            // state.
+            if(machine.get().getUDPState()!=INIT)
+                go(initState);
         }
     }
 }

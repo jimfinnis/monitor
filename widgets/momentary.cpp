@@ -272,11 +272,16 @@ void Momentary::checkForNewData(){
             
         // get most recent datum
         Datum<float> *d = b->read(0);
-        if(d && d->isRecent()){
-            if(d->t > out->timeSent){
-                machine.get().onNewData(this,d->d); 
+        if(d) {
+            if(d->isRecent()){
+                if(d->t > out->timeSent){
+                    machine.get().onNewData(this,d->d); 
+                }
+            } else {
+//                go(initState);// stale data, return to init
             }
         }
+            
     }
 }
 
