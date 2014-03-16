@@ -273,10 +273,18 @@ static void parseFrame(QWidget *parent){
     int spacing=2;
     bool done=false;
     
+    char label[256];
+    bool hasLabel=false;
+    
     while(!done){
         switch(tok.getnext()){
         case T_BORDERLESS:
             borderless=true;
+            break;
+        case T_LABEL:
+            if(!tok.getnextstring(label))
+                throw UnexpException(&tok,"frame label");
+            hasLabel=true;
             break;
         case T_SPACING:
             spacing=tok.getnextint();
@@ -298,9 +306,21 @@ static void parseFrame(QWidget *parent){
     QGridLayout *l = new QGridLayout;
     l->setSpacing(spacing);
     f->setLayout(l);
-    
-    
     parseContainer(f);
+    
+    // if there's a label, we need a containing vbox
+    if(hasLabel){
+        QFrame *cont = new QFrame;
+        QVBoxLayout *bl = new QVBoxLayout;
+        cont->setLayout(bl);
+        QLabel *lab = new QLabel(label);
+        lab->setMaximumSize(10000,20);
+        bl->addWidget(lab);
+        bl->addWidget(f);
+        
+        f=cont;
+    }
+    
     
     // add to the parent's layout
     ((QGridLayout*)parent->layout())->addWidget(f,pos.y,pos.x,pos.h,pos.w);

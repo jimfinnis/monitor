@@ -57,20 +57,21 @@ var {
 window fullscreen {
     
     
-    frame 0,0,1,30 {
-        gauge 0,0 { var req1 }
-        gauge 1,0 { var req3 }
-        gauge 2,0 { var req5 }
-        gauge 0,1 { var req2 }
-        gauge 1,1 { var req4 }
-        gauge 2,1 { var req6 }
+    frame 0,0,1,30 label "fronk"{
         
-        gauge 0,2 { var actual1 }
-        gauge 1,2 { var actual3 }
-        gauge 2,2 { var actual5 }
-        gauge 0,3 { var actual2 }
-        gauge 1,3 { var actual4 }
-        gauge 2,3 { var actual6 }
+        gauge 0,1 { var req1 }
+        gauge 1,1 { var req3 }
+        gauge 2,1 { var req5 }
+        gauge 0,2 { var req2 }
+        gauge 1,2 { var req4 }
+        gauge 2,2 { var req6 }
+        
+        gauge 0,3 { var actual1 }
+        gauge 1,3 { var actual3 }
+        gauge 2,3 { var actual5 }
+        gauge 0,4 { var actual2 }
+        gauge 1,4 { var actual4 }
+        gauge 2,4 { var actual6 }
     }
     
     frame 1,0,1,30 spacing 0{

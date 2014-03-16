@@ -42,7 +42,8 @@ QWidget(NULL){
             b = ConfigManager::parseFloatSource();
             break;
         case T_TITLE:
-            t->getnextstring(title);
+            if(!t->getnextstring(title))
+                throw Exception(t->getline()).set("Unexpected '%s'",t->getstring());
             break;
         case T_CCURLY:
             done=true;
