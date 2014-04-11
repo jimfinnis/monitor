@@ -112,5 +112,6 @@ TokenRegistry tokens[] = {
 	{"waypoint", T_WAYPOINT},
 	{"image", T_IMAGE},
 	{"alpha", T_ALPHA},
+	{"disable", T_DISABLE},
 {NULL,-10}
 };

@@ -329,6 +329,7 @@ static void parseFrame(QWidget *parent){
 static void parseWindow(){
     // option defaults
     bool fullScreen = false; // should it be fullscreen?
+    bool disabled = false;
     // what size? (default is fit around widgets. Ignored for fullscreen.)
     int width=-1,height=-1; 
     // if set, move the window to a screen of the given dimensions
@@ -375,6 +376,9 @@ static void parseWindow(){
             screensetline = tok.getline();
             sheight = tok.getnextint();
             break;
+        case T_DISABLE: // the window is disabled and should be immediately closed
+            disabled=true;
+            break;
         }
     }
         
@@ -408,14 +412,18 @@ static void parseWindow(){
     
     
     // finally show the window and resize if required
-    if(fullScreen){
-        w->showFullScreen();
+    if(disabled){
+        w->hide(); // marked "disabled" in the config
     } else {
-        if(width>0)
-            w->resize(width,height);
-        w->show();
+        if(fullScreen){
+            w->showFullScreen();
+        } else {
+            if(width>0)
+                w->resize(width,height);
+            w->show();
+        }
+        w->activateWindow();
     }
-    w->activateWindow();
 }
 
 ConfigRect ConfigManager::parseRect(){

@@ -1,4 +1,6 @@
 hilight   .hilight.monconf 1 "audio" .scheme.keyword
+hilight   .hilight.monconf 1 "sample" .scheme.keyword
+hilight   .hilight.monconf 1 "speech" .scheme.keyword
 hilight   .hilight.monconf 1 "false" .scheme.keyword
 hilight   .hilight.monconf 1 "true" .scheme.keyword
 hilight   .hilight.monconf 1 "bool" .scheme.keyword
@@ -67,6 +69,7 @@ hilight   .hilight.monconf 1 "sendaddr" .scheme.keyword
 hilight   .hilight.monconf 1 "label" .scheme.keyword
 hilight   .hilight.monconf 1 "start" .scheme.keyword
 hilight   .hilight.monconf 1 "end" .scheme.keyword
+hilight   .hilight.monconf 1 "clip" .scheme.keyword
 hilight   .hilight.monconf 1 "immediate" .scheme.keyword
 hilight   .hilight.monconf 1 "key" .scheme.keyword
 hilight   .hilight.monconf 1 "always" .scheme.keyword
@@ -91,3 +94,7 @@ hilight   .hilight.monconf 1 "line" .scheme.keyword
 hilight   .hilight.monconf 1 "arrow" .scheme.keyword
 hilight   .hilight.monconf 1 "angle" .scheme.keyword
 hilight   .hilight.monconf 1 "special" .scheme.keyword
+hilight   .hilight.monconf 1 "waypoint" .scheme.keyword
+hilight   .hilight.monconf 1 "image" .scheme.keyword
+hilight   .hilight.monconf 1 "alpha" .scheme.keyword
+hilight   .hilight.monconf 1 "disable" .scheme.keyword
