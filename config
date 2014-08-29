@@ -54,7 +54,7 @@ var {
     float ticks 10 range 0 to 60000
 }
 
-window fullscreen {
+window  {
     
     
     frame 0,0,1,30 label "fronk"{
@@ -105,90 +105,8 @@ window fullscreen {
                 gauge 1,2 { var temp8 subtitle "DS 6" levels previous}
                 gauge 2,2 { var temp9 subtitle "LL 56" levels previous}
             }
-            frame 3,0 borderless {
-                frame 0,3,2,1 borderless {
-                    number 0,0 { var dist}
-                    number 0,1 { var ptime title "log time"}
-            number 0,1 { var ticks}
-    
-                    status 0,2,1,2 {
-                        size 2,3
-                        colour black "#400" true
-                        floatrange {
-                            pos 0,0     title "HOT1"  var temp1
-                            bands
-                            <13     blue
-                            <16     green
-                            <17     yellow
-                            else    red
-                        }
-                        floatrange {
-                            pos 1,0     title "HOT2"  var temp2 bands previous
-                        }
-                        floatrange {
-                            pos 0,1     title "HOT3"  var temp4 bands previous
-                        }
-                        floatrange {
-                            pos 1,1     title "HOT4"  var temp5 bands previous
-                        }
-                        floatrange {
-                            pos 0,2     title "HOT5"  var temp7 bands previous
-                        }
-                        floatrange {
-                            pos 1,2     title "HOT6"  var temp8 bands previous
-                        }
-                    }
-                }
-            }
         }
         
-    }
-
-
-
-    frame 0,30,2,10 {
-
-        gauge 0,0 { var current1}
-        gauge 1,0 { var current2}
-        gauge 2,0 { var current3}
-        gauge 0,1 { var current4}
-        gauge 1,1 { var current5}
-        gauge 2,1 { var current6}
-
-        gauge 3,0 { var h1}
-        gauge 4,0 { var h2}
-        gauge 5,0 { var h3}
-        gauge 3,1 { var h4}
-        gauge 4,1 { var h5}
-        gauge 5,1 { var h6}
-
-        graph 6,0,7,1 {
-            time 500
-            var temp1 { col red width 2}
-            var temp2 { col red width 3}
-            var temp3 { col red width 1}
-            
-            var temp4 { col green width 2}
-            var temp5 { col green width 3}
-            var temp6 { col green width 1}
-        
-            var temp7 { col blue width 2}
-            var temp8 { col blue width 3}
-            var temp9 { col blue width 1}
-        
-            var dist { col white }
-        }
-        graph 6,1,7,1{
-            time 500
-            
-            var h1 { col red width 2}
-            var h2 { col red width 3}
-            var h3 { col red width 1}
-        
-            var h4 { col green width 2}
-            var h5 { col green width 3}
-            var h6 { col green width 1}
-        }
     }
 }
 

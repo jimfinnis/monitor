@@ -1,0 +1,170 @@
+Typical usage:
+
+Copy the waypoint.c/waypoint.h files in this directory into your robot's code.
+
+Then write the following routines:
+
+    void postCopyTransitToWorking() 
+
+to copy data out of the received waypoint buffer into your robot's waypoint
+system;
+
+    void preCopyWorkingToTransit()
+    
+to copy data from your robot's waypoint system into the send waypoint buffer;
+
+some kind of initialisation function to set up the link and add any
+extra fields (in addition to "lat" and "lon"). This will need to call
+wpInit(sendfunc,NULL) with a pointer to a function taking a string, to
+send the UDP data. You'll almost certainly already have one of these.
+
+Next, modify your UDP string receive code (I assume you have some) to
+strip newlines and call wpProcessString(const char *s) with any UDP
+lines received which start with a '+', which will be waypoint protocol.
+
+Finally, call wpTick() every half-second or so.
+
+
+
+Here's an example of setup, from the Minty code:
+
+
+
+int fldLinger; //<! index of Linger field in data
+int fldDist; //!< index of Distance field in data
+int fldSpeed; //!< index of Speed field in data
+
+// copy the working buffer into the actual waypoints
+void postCopyTransitToWorking(){
+    int i;
+    
+    // Minty code to lock various resources; minty is heavily threaded.
+    // being called from inside wpTick(), so WPPROTO is already locked
+    printf("locking to copy transit to working..\n");
+    make_locks(NUM_OF_WAYPOINTS_LOCK+CURRENT_WAYPOINT_LOCK+WAYPOINTS_LOCK+LINGER_TIME_LOCK+WAYPOINT_START_TIME_LOCK,"waypoint-580");
+    
+    // delete all existing waypoints
+    
+    for(i=0;i<num_of_waypoints;i++){
+        free(waypoints[i]);
+    }
+    
+    // copy the waypoints from the buffer
+    for(i=0;i<wpGetCount();i++){
+        // get pointer to new waypoint data
+        double *d = wpGet(i);
+        // malloc a minty waypoint and copy the data into it
+        waypoints[i] = (position *)malloc(sizeof(position));
+        // the data is an array of doubles, 0 and 1 are always
+        // lat and lon respectively
+        waypoints[i]->lat = deg2rad(d[0]);
+        waypoints[i]->lon = deg2rad(d[1]);
+        // the remaining field indices are setup in wpInit; the
+        // are set up on the monitor side in the config file
+        linger_times[i] = d[fldLinger];
+        speeds[i] = d[fldSpeed];
+        thresholds[i] = d[fldDist];
+    }
+    // set the waypoint counts, etc.
+    num_of_waypoints = wpGetCount();
+    current_waypoint = wpGetCurrent();
+    
+    // and unlock
+    remove_locks(NUM_OF_WAYPOINTS_LOCK+CURRENT_WAYPOINT_LOCK+WAYPOINTS_LOCK+LINGER_TIME_LOCK+WAYPOINT_START_TIME_LOCK);
+    printf("unlocked after copy transit to working..\n");
+}
+
+// copy the the actual waypoints into the waypoint comms system's
+// working buffer - does much the same as the previous code, only
+// in reverse.
+
+void preCopyWorkingToTransit(){
+    int i;
+    
+    // lock the necessary resources
+    // being called from inside wpTick(), so WPPROTO is already locked
+    printf("unlocking to copy working to transit..\n");
+    make_locks(NUM_OF_WAYPOINTS_LOCK+CURRENT_WAYPOINT_LOCK+WAYPOINTS_LOCK+LINGER_TIME_LOCK+WAYPOINT_START_TIME_LOCK,"waypoint-587");
+    
+    // set the current waypoint in the transmit buffer
+    wpSetCurrent(current_waypoint);
+    
+    // create a new working set
+    wpCreateWorking(num_of_waypoints);
+    // and copy the waypoints into it
+    for(i=0;i<num_of_waypoints;i++){
+        double *d = wpGet(wpAppend(i));
+        d[0] = rad2deg(waypoints[i]->lat);
+        d[1] = rad2deg(waypoints[i]->lon);
+        d[fldLinger] = linger_times[i];
+        d[fldSpeed] = speeds[i];
+        d[fldDist] = thresholds[i];
+    }
+    
+    // and unlock
+    remove_locks(NUM_OF_WAYPOINTS_LOCK+CURRENT_WAYPOINT_LOCK+WAYPOINTS_LOCK+LINGER_TIME_LOCK+WAYPOINT_START_TIME_LOCK);
+    printf("unlocked after copy working to transit..\n");
+    
+}
+
+// this is a little wrapper function around a UDP send function, just
+// adding a printf so we can see the waypoint data being sent.
+void wpsend(const char *s){
+    extern void base_udp_send(const char *s);
+    printf("SENDING: %s\n",s);
+    base_udp_send(s);
+}
+
+
+// this function is called from the minty init code; it sets up the
+// waypoint monitor system.
+
+void init_waypoint_monitor_link(){
+    // initialise the system, giving the address of the send function.
+    wpInit(wpsend,NULL);
+    // clear all extra field definitions
+    wpResetDefinitions();
+    
+    // set the callbacks we wrote above
+    wpSetPreCopyWorkingToTransit(preCopyWorkingToTransit);
+    wpSetPostCopyTransitToWorking(postCopyTransitToWorking);
+    
+    // add three extra fields and remember their indices. The
+    // extra values are the default values of the data
+    
+    // time to linger at waypoint before moving on
+    fldLinger=wpAddField("linger",0);
+    // distance within which are considered "at" the waypoint
+    fldDist=wpAddField("dist",0.009);
+    // speed to move to this waypoint
+    fldSpeed=wpAddField("target_speed",3);
+    
+    // specify a working buffer size of 100 points maximum
+    wpCreateWorking(100);
+    
+}
+
+
+and inside the UDP receive code:
+
+    if(*buf=='+'){
+	//strip newline from incoming packet
+	for(int i=0;i<strlen(buf);i++)
+	{
+	    if(buf[i]!='\n')
+	    {
+		buf2[i]=buf[i];
+	    }
+	    else
+	    {
+		buf2[i]=0;
+		break;
+	    }
+	}
+        // it's a waypoint protocol packet
+        make_locks(WPPROTO_LOCK,"udp wp protocol");
+        wpProcessString(buf2);
+        remove_locks(WPPROTO_LOCK);
+        return;
+    }
+
