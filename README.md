@@ -21,7 +21,7 @@ A highly configurable Qt program for monitoring data being sent by key/value UDP
     
         time=1363456055 lat=52.841473 long=-3.459698 a=0.099833 b=-0.666276
 
-*You don't need to send every variable in every packet, but there must always be "time" which must be a UNIX timestamp.
+* You don't need to send every variable in every packet, but there must always be "time" which must be a UNIX timestamp.
         
 
 ## More documentation
