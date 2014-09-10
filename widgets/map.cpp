@@ -440,6 +440,7 @@ bool MapWidget::eventFilter(QObject *obj,QEvent *event){
                 resetBox();
             else if(a==fetchAction)
                 wpRequestWaypoints(1);
+#if COMPLEXWAYPOINTS
             else if(a==sendAction && confirm("Are you sure? (Particularly about\nthe current waypoint!")){
                 if(curWaypoint<0){
                     if(confirm("No current waypoint - use the first?"))
@@ -460,6 +461,14 @@ bool MapWidget::eventFilter(QObject *obj,QEvent *event){
                     wpSendWaypoints(curWaypoint+1);
                 }
             }
+#else
+            else if(a==useAction || a==sendAction){
+                if(confirm("THIS WILL DELETE ALL REMOTE WAYPOINTS!")){
+                    wpSendSimple();
+                }
+            }
+            
+#endif
             else if(a==loadAction)
                 WaypointDialog::load(this);
             else if(a==saveAction)

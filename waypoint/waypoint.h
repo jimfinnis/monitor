@@ -111,6 +111,9 @@ void wpCreateWorking(int capacity);
 /// is autoswitch-1.
 void wpSendWaypoints(int autoswitch);
 
+/// simple send function for bob-like boats.
+void wpSendSimple();
+
 /// tell the other system to send waypoints to me
 /// if autoswitch is set, automatically copy
 /// transit into working on completion. The starting waypoint

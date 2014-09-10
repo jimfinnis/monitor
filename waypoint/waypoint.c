@@ -479,6 +479,27 @@ void wpSendWaypoints(int autoswitch){
     _wpSendWaypoints(autoswitch);
 }
 
+void wpSendSimple(){
+    char buf[256];
+    int i,j;
+    wpCopyWorkingToTransit();
+    
+    sprintf(buf,"+ct=%d cur=%d\n",transit->count,transit->current);
+    puts(buf);
+    
+    for(i=0;i<transit->count;i++){
+        sprintf(buf,"+id=%d ",i);
+        double *data = wpGetTransit(i);
+        for(j=0;j<numFields;j++){
+            sprintf(buf+strlen(buf),
+                    "%s=%f ",fieldNames[j],
+                    (float)data[j]);
+        }
+        buf[strlen(buf)-1]='\n';
+        puts(buf);
+    }
+}
+
 
 static void attemptRestartSend(){
     if(!--protocolRetryCount){

@@ -8,7 +8,7 @@ waypoint {
 }
 
 # uncomment these to change the ports on which the system listens and sends
-#port 33333
+port 50000
 #sendport 33334
 
 # First there's a block of variable declarations. There
@@ -133,7 +133,7 @@ window size 800,800  {
         # and finally we'll add a compass, showing a*180 (i.e. from -180 to 180)
         # as a heading.
     
-        compass 1,2 {
+        compass 1,2 size 100 {
             title "heading"
             expr "a*180" range auto
         }        
