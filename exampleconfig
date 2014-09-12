@@ -8,8 +8,8 @@ waypoint {
 }
 
 # uncomment these to change the ports on which the system listens and sends
-port 50000
-#sendport 33334
+port 8889
+sendport 8888
 
 # First there's a block of variable declarations. There
 # should be one of these for each key which appears in the

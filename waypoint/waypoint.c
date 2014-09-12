@@ -17,7 +17,7 @@
 #include "waypoint.h"
 
 // max number of fields in a wp
-#define MAXFIELDS 32
+#define MAXFIELDS 8
 // how many times we retry to send waypoints if the protocol
 // gets confused
 #define RETRIES_PERMITTED 32
@@ -407,9 +407,6 @@ uint16_t Fletcher16( const uint8_t* data, int count )
     uint16_t sum1 = 0;
     uint16_t sum2 = 0;
     int index;
-    
-    char buf[256];
-    strncpy(buf,data,count);buf[count]=0;
     
     for( index = 0; index < count; ++index )
     {
@@ -1057,9 +1054,6 @@ uint16_t hex2int(const char *a, unsigned int len)
 {
     int i;
     uint16_t val = 0;
-    
-    char buf[256];
-    strncpy(buf,a,len);buf[len]=0;
     
     for(i=0;i<len;i++)
         if(a[i] <= 57)

@@ -464,7 +464,7 @@ bool MapWidget::eventFilter(QObject *obj,QEvent *event){
 #else
             else if(a==useAction || a==sendAction){
                 if(confirm("THIS WILL DELETE ALL REMOTE WAYPOINTS!")){
-                    wpSendSimple();
+                    wpSendWaypoints(true);
                 }
             }
             
