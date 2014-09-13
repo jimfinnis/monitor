@@ -11,12 +11,25 @@
 #include <stdint.h>
 #include <stdio.h>
 
-//#define TEST
+#define TEST
 
+extern void setval(const char *var,double val);
+extern void setwpcount(int n);
+extern void setwp(int n,double lat,double lon);
 
 
 #ifdef TEST
 #define debug printf
+void setval(const char *var,double val){
+    printf("Set value: %s=%f\n",var,val);
+}
+void setwpcount(int n){
+    printf("Setting waypoint count to %d\n",n);
+}
+void setwp(int n,double lat,double lon){
+    printf("Setting waypoint %d to lat %f,lon %f\n",n,lat,lon);
+}
+
 #include "udp.h"
     
 UDP udp;
@@ -110,7 +123,18 @@ char *processSerialString(char *s,bool storeTID){
             debug("FAILED - bad checksum\n");
             return NULL;
     } else {
-        /// deal with variable set code here
+        // this is a variable set
+        char *keyvalpair = strtok(s," ");
+        while(keyvalpair){
+            char *brk = strchr(keyvalpair,'=');
+            if(brk){
+                char key[32];
+                memcpy(key,keyvalpair,brk-keyvalpair);
+                key[brk-keyvalpair]=0;
+                setval(key,atof(brk+1));
+            }
+            keyvalpair = strtok(NULL," ");
+        }
         return NULL;
     }
 }
@@ -142,6 +166,7 @@ static void processWaypointLine(char *p){
             double lon = atof(t);
             // Add extra fields here
             // NOW SET WAYPOINT WPN to LAT,LON
+            setwp(wpn,lat,lon);
             // set the bit and decrement remaining points
             bitfield[wpn/8] |= 1<<(wpn%8);
             waypointsremaining--;
@@ -166,6 +191,7 @@ static void processLine(char *s){
             if(colon){
                 *colon = 0;
                 waypointcount = atoi(s);
+                setwpcount(waypointcount);
                 waypointsremaining = waypointcount;
                 mode = WAYP;
                 memset(bitfield,0,32);
