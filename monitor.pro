@@ -7,7 +7,7 @@
 QT       += core gui network
 CONFIG  += debug
 LIBS += -lrt
-DEFINES += MARBLE
+# DEFINES += MARBLE
 
 TARGET = monitor
 TEMPLATE = app
@@ -73,9 +73,9 @@ HEADERS  += app.h \
 
 //FORMS    += mainwindow.ui
 RESOURCES += res.qrc
-INCLUDEPATH += /usr/include/marble
+# INCLUDEPATH += /usr/include/marble
 
-LIBS += -L/usr/local/lib -lmarblewidget
+LIBS += -L/usr/local/lib # -lmarblewidget
 
 FORMS += \
     waypointdialog.ui

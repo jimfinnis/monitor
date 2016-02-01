@@ -422,7 +422,9 @@ static void parseWindow(){
                 w->resize(width,height);
             w->show();
         }
+        w->raise();
         w->activateWindow();
+        w->setWindowState(Qt::WindowActive);
     }
 }
 
