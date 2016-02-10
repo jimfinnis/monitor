@@ -415,16 +415,16 @@ static void parseWindow(){
     if(disabled){
         w->hide(); // marked "disabled" in the config
     } else {
+        w->setWindowState(Qt::WindowActive);
+        w->raise();
+        w->activateWindow();
         if(fullScreen){
             w->showFullScreen();
         } else {
             if(width>0)
                 w->resize(width,height);
-            w->show();
+            w->showNormal();
         }
-        w->raise();
-        w->activateWindow();
-        w->setWindowState(Qt::WindowActive);
     }
 }
 
