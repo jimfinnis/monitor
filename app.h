@@ -65,6 +65,9 @@ public:
     void startLog();
     void stopLog();
     
+    /// exit the application, first sending a QUIT=1 message over UDP.
+    void quitAction();
+    
     void addAudio(const char *warning,DataBuffer<float> *buf,bool speech);
     /// periodic check for audio warnings
     void checkAudio();

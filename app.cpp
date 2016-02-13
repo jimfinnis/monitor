@@ -176,6 +176,11 @@ void Application::update(){
     checkAudio();
 }
 
+void Application::quitAction(){
+    UDPClient::getInstance()->send("QUIT=1");
+    exit(0);
+}
+
 void Application::udpSend(){
     UDPClient::getInstance()->update();
 }
@@ -205,7 +210,7 @@ void Application::fatalError(const QString &details)
                      );
     mbox.setDetailedText(details);
     mbox.exec();
-    quit();
+    quitAction();
 }
 
 void Application::processUDP(char *s,int size){

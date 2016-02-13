@@ -307,9 +307,9 @@ void Momentary::paintEvent(QPaintEvent *event){
 
 void Momentary::doSpecial(){
     printf("Performing %s\n",special);
-    if(!strcmp(special,"quit"))
-        exit(0);
-    else if(!strcmp(special,"resetmaps"))
+    if(!strcmp(special,"quit")){
+        getApp()->quitAction();
+    } else if(!strcmp(special,"resetmaps"))
         getApp()->resetAllMaps();
     
     else if(!strcmp(special,"startlog"))
