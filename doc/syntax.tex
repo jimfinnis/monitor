@@ -705,7 +705,10 @@ perform a special action, hardwired into the code. Any other specified action,
 such as an output to a variable or a nudge, will be ignored. The specials are
 currently:
 \begin{itemize}
-\item \textbf{quit} will quit the program
+\item \textbf{quit} will quit the program, sending the special string
+\texttt{QUIT=1} over UDP as it does so.
+\item \textbf{startlog} will start writing a log file of incoming UDP data
+\item \textbf{stoplog} will start writing a log file
 \item \textbf{resetmaps} will cause all maps to reset their bounding boxes to contain their items
 \end{itemize}
 
