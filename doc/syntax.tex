@@ -549,7 +549,7 @@ In non-feedback mode, the switch has three states:
 \item \textbf{green} corresponds to 1,
 \item \textbf{dark grey} means the data is queued for sending but has not yet been sent (see section~\ref{subhowout}.)
 \end{itemize}
-In feedback mode, the switch has four states --- the colours indicate these states as well
+In feedback mode, the switch has six states --- the colours indicate these states as well
 as the on/off state of the switch in the OK state:
 \begin{itemize}
 \item \textbf{yellow diagonal crosshatch} (INIT) means no value has been received from the server,
@@ -573,17 +573,18 @@ more clearly.
 \caption{State diagram for switches}
 \label{switchstates}
 \end{figure}
-See Section~\ref{secclient} for details of how to write remote code to deal with switches.
+See Section~\ref{secclient} for details of how to write remote code to deal with switches,
+or use the code in the \texttt{sampleClient} directory as a template.
 
 Switch specifications consist of a position, the name of an
 output variable to use in the send packets, a title,
 an an optional feedback source. There may also be the word \verb+always+, in which case the value for this switch
-is always sent, whenever any other output widget changes and when the send interval elapses; and the word `immediate'
+is always sent, whenever any other output widget changes and when the send interval elapses; and the word \verb+immediate+ 
 indicating that when the switch is pressed, a UDP send update should be done immediately. This will result in the
-switch's data being sent, as well as any data for other `always' output widgets. The word 'button' will make the switch
+switch's data being sent, as well as any data for other `always' output widgets. The word \verb+button+ will make the switch
 look more like a momentary button than a crude toggle. It's a purely visual change.
 
-If `integer' is set, the switch will round all values it sends --- this is important if the value is converted to an integer
+If \verb+integer+  is set, the switch will round all values it sends --- this is important if the value is converted to an integer
 at the remote end, because otherwise the feedback value will not match the original float value of the slider.
 \begin{v}
 switch      ::= 'switch' pos '{'
@@ -822,6 +823,7 @@ packet and the packet before that. It is updated on every packet.
 \end{itemize}
 
 \section{Writing remotes}
+\label{secclient}
 \subsection{Telemetry}
 The simple case is a telemetry-only remote, which just sends information to the monitor. This should send lines consisting
 of a timestamp in seconds (preferably a UNIX timestamp) and variable values, all as floats in key=value pairs, terminated with
