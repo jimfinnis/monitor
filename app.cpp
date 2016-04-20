@@ -168,6 +168,7 @@ Window *Application::createWindow(){
 
 Application::~Application()
 {
+    UDPClient::getInstance()->send("QUIT=1");
     delete udpServer;
 }
 

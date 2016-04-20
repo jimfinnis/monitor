@@ -3,8 +3,8 @@ A file consist of blocks, which are either:
 \begin{itemize}
 \item variable blocks, describing the variables expected from the UDP client;
 \item window definitions, describing the windows and the frames and widgets within them;
-\item audio warning definitions.
-they contain;
+\item audio warning definitions;
+\item waypoint extra data definitions;
 \item configuration options.
 \end{itemize}
 
@@ -13,9 +13,9 @@ file        ::= { block }
 
 block       ::= varblock
             |   window
-            |   configoption
             |   audio
             |   waypointdef
+            |   configoption
 \end{v}
 
 \subsection{Configuration options}
@@ -84,7 +84,7 @@ varname     ::= ident
 When a message arrives giving the value of a linked variable, dummy
 entries with the same timestamp are created for other variables
 in the link with the previous value those variables had. Linked
-variables are used for sets of variables which comprise a single
+variables should be used for sets of variables which comprise a single
 entity, such as latitude and longitude or \emph{xyz} coordinates,
 where if a change is received on one variable the others should be
 considered to have changed even though an explicit change was not
@@ -196,15 +196,16 @@ some of which are mandatory:
 \item a \textbf{source specification} (mandatory)
 \item a \textbf{position specification} (mandatory)
 \item a \textbf{title string} giving the gauge's label --- without this,
-the variable name or expression string from the source are used;
+the variable name or expression string from the source is used;
 \item a \textbf{subtitle string} giving a smaller label, which is empty
 by default;
 \item a \textbf{levels specification} giving the value of the warning
 and danger levels in terms of the input source range --- if the source range is
 auto, these should be 0-1. If \emph{previous} is specified, the preceding
 level specification is used;
-\item a \textbf{colours} specification giving colours for 
-the normal, warn and danger ticks;
+\item a \textbf{colour} specification giving colours for 
+the normal, warn and danger ticks. A \emph{previous} keyword permits
+the previously parsed colour specification to be used;
 \item a \textbf{darken} factor, giving the value used to darken the colours
 to show the ``off'' ticks on the gauge. The default is 400, which means that
 the dark colour is a quarter of the bright colour. The higher the value, 

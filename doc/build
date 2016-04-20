@@ -1,0 +1,5 @@
+!#/bin/bash
+# Build script for invocation by editor macro.
+
+pdflatex main.tex
+

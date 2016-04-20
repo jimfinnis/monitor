@@ -1,0 +1,46 @@
+\section{Introduction}
+The \textbf{monitor} program is a Qt-based program for monitoring
+and controlling remote systems (typically robots) using key/value pairs
+sent as text over UDP channels. The program takes a configuration
+file describing the variables to be monitored and UI widgets viewing
+those variables (or expressions based on them). Certain widgets 
+can also send data to the remote.
+
+\subsection{Requirements}
+\begin{itemize}
+\item Qt version 4
+\item The Marble widget for displaying maps
+\item Compiled under Ubuntu -- should work, but untested on anything else
+\end{itemize}
+
+\subsection{Compilation}
+\begin{itemize}
+\item Install Qt4
+\item Install Marble (see \url{https://marble.kde.org/install.php}) --
+under Ubuntu this entails installing the \texttt{marble} and \texttt{libmarble-dev}
+packages
+\item From the main directory, run \texttt{qmake-qt4} (or just \texttt{qmake} if
+only Qt4 is installed) to build the makefile, then run \texttt{make}
+\item Once built, test by running \texttt{./monitor -f exampleconfig}
+\end{itemize}
+
+\subsection{Receiving data}
+Typically, the remote system sends lines of data which looks like this:
+\begin{v}
+time=13.0 x=1 y=2 someval=100
+time=13.2 x=0
+time=13.5 x=1 y=2
+\end{v}
+That is, space-separated key/value pairs containing a mandatory
+timestamp. Values are all numerical (floating point).
+
+\subsection{Sending data}
+Some monitor widgets can also send data to the remote. This data
+is also in space-separated key-value pairs.
+
+\subsection{Running}
+To run the monitor, use the command
+\begin{v}
+./monitor -f configfile
+\end{v}
+where \texttt{configfile} is the name of a valid configuration file.
