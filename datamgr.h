@@ -64,6 +64,10 @@ public:
     /// helper function to get the current time including ms.
     static double getTimeNow();
     
+#if DIAMOND
+    static void pollDiamond();
+#endif
+    
     /// redraw everything, by sending a message saying that
     /// all variables have changed. Will NOT result in a UDP resend of output variables;
     /// they're a separate mechanism.

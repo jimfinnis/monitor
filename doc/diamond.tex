@@ -1,0 +1,31 @@
+\section{Diamond Apparatus support}
+To add diamond support, rebuild with the appropriate config option:
+\begin{v}
+make clean
+qmake-qt4 -config diamond
+make
+\end{v}
+Add a DA variable with the following \texttt{vardef}:
+\begin{v}
+dvardef     ::= 'diamond' 'float' varname 'topic' topicname ',' index
+                 buffersize 'range' rangespec
+            |   'diamond' 'linked' '(' { linkedvar ',' } linkedvar ')'
+                buffersize
+
+linkedvar  ::= 'float' varname 'topic' topicname ',' index
+               'range' float 'to' float
+
+buffersize  ::= int
+varname     ::= ident
+topicname   ::= ident
+index       ::= int
+\end{v}
+An example:
+\begin{v}
+diamond float foo topic foo,0   100 range 0 to 1
+diamond linked (
+    float lat topic pos,0   range -90 to 90,
+    float lon topic pos,1   range -180 to 180) 1000
+)    
+\end{v}
+

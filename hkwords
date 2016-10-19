@@ -98,3 +98,5 @@ hilight   .hilight.monconf 1 "waypoint" .scheme.keyword
 hilight   .hilight.monconf 1 "image" .scheme.keyword
 hilight   .hilight.monconf 1 "alpha" .scheme.keyword
 hilight   .hilight.monconf 1 "disable" .scheme.keyword
+hilight   .hilight.monconf 1 "diamond" .scheme.keyword
+hilight   .hilight.monconf 1 "topic" .scheme.keyword

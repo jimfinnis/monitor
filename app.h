@@ -30,6 +30,9 @@ public slots:
     void fatalError(const QString& details);
     void update();
     void waypointTick();
+#if DIAMOND
+    void pollDiamond();
+#endif
     void udpSend();
     void switchFound(const QString& s);
     void optionFound(const QString&s, const QVariant& v);

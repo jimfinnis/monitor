@@ -113,5 +113,7 @@ TokenRegistry tokens[] = {
 	{"image", T_IMAGE},
 	{"alpha", T_ALPHA},
 	{"disable", T_DISABLE},
+	{"diamond", T_DIAMOND},
+	{"topic", T_TOPIC},
 {NULL,-10}
 };

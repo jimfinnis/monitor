@@ -96,6 +96,7 @@ start: T_START
 end: T_END_WD
 clip:T_CLIP
 
+
 immediate:  T_IMMEDIATE
 key : T_KEY
 always: T_ALWAYS
@@ -124,3 +125,7 @@ waypoint:T_WAYPOINT
 image:T_IMAGE
 alpha:T_ALPHA
 disable:T_DISABLE
+
+diamond:T_DIAMOND
+topic:T_TOPIC
+

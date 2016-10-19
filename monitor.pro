@@ -9,6 +9,11 @@ CONFIG  += debug
 LIBS += -lrt
 DEFINES += MARBLE
 
+diamond {
+    DEFINES += DIAMOND
+    LIBS += -ldiamondapparatus
+}
+
 TARGET = monitor
 TEMPLATE = app
 

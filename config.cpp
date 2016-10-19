@@ -28,6 +28,10 @@
 
 #include "waypoint/waypoint.h"
 
+#if DIAMOND
+#include "diamond.h"
+#endif
+
 #include "datamgr.h"
 
 int ConfigManager::port = -1;
@@ -39,7 +43,10 @@ int ConfigManager::graphicalUpdateInterval=2000;
 
 bool ConfigManager::inverse=false;
 
-
+#if DIAMOND
+QMap<DiamondTopicKey,QString> diamondMap;
+QSet<QString> diamondSet; // set of topics subscribed
+#endif
 
 /// a structure to hold variable names and types for linkage
 struct LinkedVarEntry {
@@ -72,6 +79,8 @@ class MyTError : public ITokeniserErrorHandler{
 
 static MyTError tokerrorhandler;
 
+
+
 /// handy function for creating a buffer of any type - mn and mx will be cast from float or just ignored,
 /// whatever is appropriate for the type.
 static RawDataBuffer *createVar(int type, const char *s, int size,float mn=0,float mx=1){
@@ -91,6 +100,114 @@ static RawDataBuffer *createVar(int type, const char *s, int size,float mn=0,flo
     return NULL;
 }
 
+static void parseAVar(bool diamond){
+    // it's a valid type
+    char buf[256];
+    bool autoRange=false;
+    float mn=0,mx=0;
+    int size;
+    RawDataBuffer *b;
+    tok.getnextident(buf); // get name
+    
+    // if diamond, get topic and datum index
+    char tname[256];
+    int idx;
+#if DIAMOND
+    if(diamond){
+        tok.getnextcheck(T_TOPIC);
+        tok.getnextident(tname);
+        tok.getnextcheck(T_COMMA);
+        idx = tok.getnextint();
+        diamondMap[DiamondTopicKey(tname,idx)]=QString(buf);
+        diamondapparatus::subscribe(tname);
+        if(!diamondSet.contains(tname))
+            diamondSet.insert(tname);
+    }
+#endif    
+    size = tok.getnextint(); // and size
+    // now get the range
+    tok.getnextcheck(T_RANGE);
+    switch(tok.getnext()){
+    case T_INT:
+    case T_FLOAT:
+        mn = tok.getfloat();
+        tok.getnextcheck(T_TO);
+        mx = tok.getnextfloat();
+        break;
+    case T_AUTO:
+        autoRange=true;
+        break;
+    default:
+        throw UnexpException(&tok,"number or 'auto'");
+        break;
+    }
+    b=createVar(T_NAMEFLOAT,buf,size,mn,mx);
+    if(autoRange)
+        ((DataBuffer<float>*)b)->setAutoRange();
+}
+
+void parseLinkedVars(bool diamond){
+    char buf[256];
+    int size,type;
+    RawDataBuffer *linkvar,*b;
+    if(tok.getnext()!=T_OPREN)
+        throw UnexpException(&tok,"( after linked");
+    linkedVars.clear();
+    for(;;){
+        double mn,mx;
+        char buf[256];
+        // get type
+        type = tok.getnext();
+        // get name
+        tok.getnextident(buf);
+        // if diamond, get topic and datum index
+        char tname[256];
+        int idx;
+#if DIAMOND
+        if(diamond){
+            tok.getnextcheck(T_TOPIC);
+            tok.getnextident(tname);
+            tok.getnextcheck(T_COMMA);
+            idx = tok.getnextint();
+            diamondMap[DiamondTopicKey(tname,idx)]=QString(buf);
+            if(!diamondSet.contains(tname))
+                diamondSet.insert(tname);
+            diamondapparatus::subscribe(tname);
+        }
+#endif
+        // now the range
+        tok.getnextcheck(T_RANGE);
+        mn = tok.getnextfloat();
+        tok.getnextcheck(T_TO);
+        mx = tok.getnextfloat();
+        
+        // add to a list!
+        linkedVars.append(LinkedVarEntry(buf,type,mn,mx));
+        if(tok.getnext()!=T_COMMA){
+            tok.rewind();
+            break;
+        }
+    }
+    if(tok.getnext()!=T_CPREN)
+        throw UnexpException(&tok,") after linked var list");
+    if(tok.getnext()!=T_INT)
+        throw UnexpException(&tok,"buffer size after linked var list");
+    size = tok.getint();
+    
+    linkvar = NULL;
+    for(int i=0;i<linkedVars.size();i++){
+        b = createVar(linkedVars[i].type,
+                      linkedVars[i].name,
+                      size,
+                      linkedVars[i].minVal,
+                      linkedVars[i].maxVal);
+        if(linkvar)
+            linkvar->link(b);
+        else
+            linkvar = b;
+    }
+}
+
 /// parse a set of variable definitions of the form 
 /// \code
 /// var <type> <name> <bufsize>, <type> <name> <bufsize>...
@@ -101,92 +218,39 @@ static RawDataBuffer *createVar(int type, const char *s, int size,float mn=0,flo
 /// \endcode
 
 static void parseVars(){
-    char buf[256];
-    int size,type;
-    RawDataBuffer *linkvar,*b;
     tok.getnextcheck(T_OCURLY);
     for(;;){
-        bool autoRange=false;
-        float mn=0,mx=0;
-        
         int t = tok.getnext();
         switch(t){
-        case T_NAMEFLOAT:
-            // it's a valid type
-            tok.getnextident(buf); // get name
-            size = tok.getnextint(); // and size
-            // now get the range
-            tok.getnextcheck(T_RANGE);
-            switch(tok.getnext()){
-            case T_INT:
-            case T_FLOAT:
-                mn = tok.getfloat();
-                tok.getnextcheck(T_TO);
-                mx = tok.getnextfloat();
+        case T_DIAMOND:
+            // diamond variables
+#if !DIAMOND
+            throw ParseException(&tok,"diamond not supported in this build");
+#else
+            if(!diamondapparatus::isRunning()){
+                diamondapparatus::init();
+            }
+            switch(t=tok.getnext()){
+            case T_NAMEFLOAT:
+                parseAVar(true);
                 break;
-            case T_AUTO:
-                autoRange=true;
+            case T_LINKED:
+                parseLinkedVars(true);
                 break;
             default:
-                throw UnexpException(&tok,"number or 'auto'");
+                throw UnexpException(&tok,"'float' or 'linked'");
                 break;
             }
-            b=createVar(T_NAMEFLOAT,buf,size,mn,mx);
-            if(autoRange)
-                ((DataBuffer<float>*)b)->setAutoRange();
+#endif
+            break;
+        case T_NAMEFLOAT:
+            parseAVar(false);
             break;
         case T_BOOL:
             throw ParseException(&tok,"bools not currently supported");
-            // it's a valid type
-            tok.getnextident(buf); // get name
-            size = tok.getnextint(); // and size
-            createVar(T_BOOL,buf,size);
             break;
         case T_LINKED:
-            if(tok.getnext()!=T_OPREN)
-                throw UnexpException(&tok,"( after linked");
-            linkedVars.clear();
-            for(;;){
-                // get type
-                type = tok.getnext();
-                // get name
-                tok.getnextident(buf);
-                // get range if a float
-                if(type==T_NAMEFLOAT){
-                    tok.getnextcheck(T_RANGE);
-                    mn = tok.getnextfloat();
-                    tok.getnextcheck(T_TO);
-                    mx = tok.getnextfloat();
-                } else {
-                    mn = 0;
-                    mx = 1;
-                }
-
-                // add to a list!
-                linkedVars.append(LinkedVarEntry(buf,type,mn,mx));
-                if(tok.getnext()!=T_COMMA){
-                    tok.rewind();
-                    break;
-                }
-            }
-            if(tok.getnext()!=T_CPREN)
-                throw UnexpException(&tok,") after linked var list");
-            if(tok.getnext()!=T_INT)
-                throw UnexpException(&tok,"buffer size after linked var list");
-            size = tok.getint();
-
-            linkvar = NULL;
-            for(int i=0;i<linkedVars.size();i++){
-                b = createVar(linkedVars[i].type,
-                              linkedVars[i].name,
-                              size,
-                              linkedVars[i].minVal,
-                              linkedVars[i].maxVal);
-                if(linkvar)
-                    linkvar->link(b);
-                else
-                    linkvar = b;
-            }
+            parseLinkedVars(false);
             break;
         case T_CCURLY:
             return;
@@ -299,7 +363,7 @@ static void parseFrame(QWidget *parent){
     
     // create frame and layout
     QFrame *f = new QFrame;
-
+    
     f->setFrameStyle(borderless?
                      QFrame::NoFrame:
                      QFrame::Panel);
@@ -381,7 +445,7 @@ static void parseWindow(){
             break;
         }
     }
-        
+    
     // create a window
     Window *w = getApp()->createWindow();
     if(number>=0)
@@ -450,7 +514,7 @@ ConfigRect ConfigManager::parseRect(){
             tok.rewind();
         }
     }else
-        tok.rewind();
+          tok.rewind();
     return r;
 }
 
@@ -515,8 +579,8 @@ static void parseWaypoint(){
         else if(t!=T_COMMA)
             throw UnexpException(&tok,"comma or '}'");
     }
-        
-        
+    
+    
 }
 
 void ConfigManager::parseFile(QString fname){

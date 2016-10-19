@@ -113,3 +113,5 @@ extern TokenRegistry tokens[];
 #define	T_IMAGE	108
 #define	T_ALPHA	109
 #define	T_DISABLE	110
+#define	T_DIAMOND	111
+#define	T_TOPIC	112

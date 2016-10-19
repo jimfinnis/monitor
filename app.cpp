@@ -135,6 +135,7 @@ Application::Application(int argc,char *argv[]) : QApplication(argc,argv){
     
     qDebug() << "Port: " << port << ", Config: " << configFile << endl;
     
+    
     QTimer *timer = new QTimer();
     connect(timer,SIGNAL(timeout()),this,SLOT(update()));
     timer->start(ConfigManager::graphicalUpdateInterval);
@@ -146,6 +147,12 @@ Application::Application(int argc,char *argv[]) : QApplication(argc,argv){
     timer = new QTimer();
     connect(timer,SIGNAL(timeout()),this,SLOT(waypointTick()));
     timer->start(700);
+    
+#if DIAMOND
+    timer = new QTimer();
+    connect(timer,SIGNAL(timeout()),this,SLOT(pollDiamond()));
+    timer->start(100);
+#endif
             
     udpServer = new UDPServer(port);
     udpServer->setListener(this);
@@ -164,6 +171,12 @@ Window *Application::createWindow(){
     w->centralWidget()->setLayout(l);
     return w;
 }
+
+#if DIAMOND
+void Application::pollDiamond(){
+    DataManager::pollDiamond();
+}
+#endif
 
 
 Application::~Application()

@@ -16,11 +16,15 @@
 #include <sys/time.h>
 #include "datamgr.h"
 #include "expr.h"
+#if DIAMOND
+#include "diamond.h"
+#endif
+
 
 float DataManager::dataValidInterval=DEFAULTDATAVALIDINTERVAL;
 
 DataBuffer<float> *DataManager::lastPacketIntervalBuffer,
-                    *DataManager::timeSinceLastPacketBuffer;
+*DataManager::timeSinceLastPacketBuffer;
 
 double DataManager::packetTimeOffset=0;
 
@@ -129,7 +133,7 @@ static void parseLine(const char *s){
             break;
         case INVAR:
             if(isalnum(*s) || *s == '_'){
-               n++;
+                n++;
             } else {
                 strncpy(varbuf,varstart,n);
                 varbuf[n]=0;
@@ -156,7 +160,7 @@ static void parseLine(const char *s){
                 valbuf[n]=0;
                 mode=WAITVAR;
                 
-//                printf("Got [%s = %s]\n",varbuf,valbuf);
+                //                printf("Got [%s = %s]\n",varbuf,valbuf);
                 writeToBuffer(varbuf,valbuf);
             }
             else n++;
@@ -171,12 +175,12 @@ void DataManager::parsePacket(char *s,int size){
     static int ct=0;
     for(int i=0;i<size;i++,s++){
         inbuf[ct++]=*s;
-//        printf("char added: %c\n",*s);
+        //        printf("char added: %c\n",*s);
         if(*s=='\n' || !*s){
             inbuf[ct-1]=0;//replace with terminator
             // process the line
             clearLinkedBuffersUsed(); // clear the list of linked buffers used in this packet
-//            printf("parsing line %s\n",inbuf);
+            //            printf("parsing line %s\n",inbuf);
             parseLine(inbuf);
             // perform required duplicate writes
             checkLinkedBuffersUsed();
@@ -184,17 +188,17 @@ void DataManager::parsePacket(char *s,int size){
             
             // calculate packet time offset, the difference between the time on the packet and when
             // it was received locally
-
+            
             packetTimeOffset = getTimeNow()-packetTime;
-
+            
             // write the difference interval between packet times to a special buffer
-    
+            
             static double lastPacketTime = -1;
             if(lastPacketTime>=0){
                 lastPacketIntervalBuffer->write(packetTime,packetTime-lastPacketTime);
             }
             lastPacketTime = packetTime;
-    
+            
         }
     }
     // recalculate any expressions whose variables may have changed
@@ -203,42 +207,80 @@ void DataManager::parsePacket(char *s,int size){
 }
 
 /*
-void DataManager::parsePacket(char *s,int size){
-    int done=0;
-    
-    s[size]=0;
-    // the packet is made up of null-terminated lines. Note that the clearLinked.. and checkLinked..
-    // calls could be moved out of this loop *if* we can guarantee that the times are all the same
-    // for every line.
-    while(done<size){
-        int len = strlen(s);
-        clearLinkedBuffersUsed(); // clear the list of linked buffers used in this packet
-        printf("parsing line %s\n",s);
-        parseLine(s);
-        // perform required duplicate writes
-        checkLinkedBuffersUsed();
-        s+=len+1;
-        done+=len+1;
+   void DataManager::parsePacket(char *s,int size){
+   int done=0;
+   
+   s[size]=0;
+   // the packet is made up of null-terminated lines. Note that the clearLinked.. and checkLinked..
+   // calls could be moved out of this loop *if* we can guarantee that the times are all the same
+   // for every line.
+   while(done<size){
+   int len = strlen(s);
+   clearLinkedBuffersUsed(); // clear the list of linked buffers used in this packet
+   printf("parsing line %s\n",s);
+   parseLine(s);
+   // perform required duplicate writes
+   checkLinkedBuffersUsed();
+   s+=len+1;
+   done+=len+1;
+   }
+   
+   // calculate packet time offset, the difference between the time on the packet and when
+   // it was received locally
+   
+   packetTimeOffset = getTimeNow()-packetTime;
+   
+   // write the difference interval between packet times to a special buffer
+   
+   static double lastPacketTime = -1;
+   if(lastPacketTime>=0){
+   lastPacketIntervalBuffer->write(packetTime,packetTime-lastPacketTime);
+   }
+   lastPacketTime = packetTime;
+   
+   // recalculate any expressions whose variables may have changed
+   recalcExpressions();
+   
+   }
+ */
+
+#if DIAMOND
+void DataManager::pollDiamond(){
+    QSetIterator<QString> i(diamondSet);
+    while(i.hasNext()){
+        // check each topic named
+        QString tname = i.next();
+        diamondapparatus::Topic t = 
+              diamondapparatus::get(tname.toStdString().c_str(),GET_WAITNONE);
+        if(t.state == TOPIC_CHANGED){
+            clearLinkedBuffersUsed(); // clear the list of linked buffers used in this packet
+            
+            // run through the topic to get any variables
+            for(int j=0;j<t.size();j++){
+                DiamondTopicKey k(tname,j);
+                if(diamondMap.contains(k)){
+                    QString vname = diamondMap[k];
+                    if(DataBuffer<float> *b = DataManager::findFloatBuffer(vname.toStdString().c_str())){
+                        // it's a float buffer, add it as a float
+                        b->write(getTimeNow(),(double)(t[j].f()));
+                        // if this is a linked buffer, we need to check that all the linked buffers were
+                        // also updated and if not create duplicate entries.
+                        if(b->isLinked())
+                            linkedVariablesUsedInLastUpdate.append(b);                    
+                    }
+                }
+                
+                // perform required duplicate writes
+                checkLinkedBuffersUsed();
+                
+            }
+        }
     }
-
-    // calculate packet time offset, the difference between the time on the packet and when
-    // it was received locally
-
-    packetTimeOffset = getTimeNow()-packetTime;
-
-    // write the difference interval between packet times to a special buffer
-    
-    static double lastPacketTime = -1;
-    if(lastPacketTime>=0){
-        lastPacketIntervalBuffer->write(packetTime,packetTime-lastPacketTime);
-    }
-    lastPacketTime = packetTime;
-    
-    // recalculate any expressions whose variables may have changed
-    recalcExpressions();
-    
 }
-*/
+#endif
+
+
+
 
 // specialisation of float readInterp
 
@@ -301,3 +343,4 @@ void DataManager::init(){
     timeSinceLastPacketBuffer = createFloatBuffer("timesincepacket",1000,0,1);
     timeSinceLastPacketBuffer->setAutoRange();
 }
+
