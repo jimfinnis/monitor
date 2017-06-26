@@ -43,6 +43,7 @@ static const struct QCommandLineConfigEntry conf[] = {
     { QCommandLine::Option, 'l', "log", "Log file", QCommandLine::Optional},
     { QCommandLine::Option, 'f', "file", "config file",     QCommandLine::Optional},
     { QCommandLine::Option, 'w', "waypoints", "waypoint file",     QCommandLine::Optional},
+    { QCommandLine::Switch, 't', "trace", "show tokens in config parsing",     QCommandLine::Optional},
     
     { QCommandLine::None, '\0', NULL, NULL, QCommandLine::Default }
 };
@@ -249,7 +250,11 @@ void Application::processUDP(char *s,int size){
  * 
  */
 
+bool traceTokeniser=false;
 void Application::switchFound(const QString& s){
+    if(s=="trace")
+        traceTokeniser=true;
+    
 }
 void Application::optionFound(const QString&s, const QVariant& v){
     bool ok;

@@ -63,6 +63,7 @@ TokenRegistry tokens[] = {
 	{"size", T_SIZE},
 	{"sizerange", T_SIZERANGE},
 	{"trail", T_TRAIL},
+	{"trailevery", T_TRAILEVERY},
 	{"time", T_TIME},
 	{"width", T_WIDTH},
 	{"height", T_HEIGHT},

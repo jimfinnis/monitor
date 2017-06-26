@@ -196,6 +196,7 @@ MarbleWidget((QWidget *)NULL) {
     
     openMenuAction = contextMenu->addAction("Open Marble menu");
     resetAction = contextMenu->addAction("Reset map");
+    clearTrailAction = contextMenu->addAction("Clear trails (TBD)");
     //    placeWaypointAction = contextMenu->addAction("Place emergency waypoint");
     delWaypoint = contextMenu->addAction("Delete current waypoint");
     appendWaypoint = contextMenu->addAction("Append waypoint at end");
@@ -296,6 +297,12 @@ void MapWidget::customPaint(GeoPainter *painter){
     box.clear();
     for(int i=0;i<renderers.size();i++){
         renderers[i]->render(painter);
+    }
+}
+
+void MapWidget::clearTrails(){
+    for(int i=0;i<renderers.size();i++){
+        renderers[i]->clearTrail();
     }
 }
 
@@ -583,6 +590,7 @@ float MapFloat::get(double t){
 MapItemPointRenderer::MapItemPointRenderer(MapWidget *w) : MapItemRenderer(w){
     // set defaults
     trailSize = 0;
+    trailEvery = 1;
 }
 
 
@@ -626,7 +634,9 @@ void MapItemPointRenderer::parseConfig(Tokeniser *t){
         case T_TRAIL:
             trailSize = t->getnextint();
             break;
-            
+        case T_TRAILEVERY:
+            trailEvery = t->getnextint();
+            break;
         case T_LABEL:
             if(!t->getnextstring(labelFormat))
                 throw ParseException(t,"expected a format string after 'label'");
@@ -666,7 +676,7 @@ void MapItemPointRenderer::render(GeoPainter *painter){
     RawDataBuffer *onBuf = onVar->getBuffer();
     
     QPen pen;
-    for(int i=0;i<trailSize+1;i++){
+    for(int i=0;i<trailSize+1;i+=trailEvery){
         // get the time of the item
         double t = onBuf->getTimeOfDatum(i);
         if(t<0.0001)break; // 0=out of range
@@ -703,6 +713,7 @@ void MapItemPointRenderer::render(GeoPainter *painter){
 MapItemVectorRenderer::MapItemVectorRenderer(MapWidget *w) : MapItemRenderer(w){
     // set defaults
     trailSize = 0;
+    trailEvery = 1;
     width.base = 1;
     clip=false;
     arrowLength=10;
@@ -776,6 +787,9 @@ void MapItemVectorRenderer::parseConfig(Tokeniser *t){
             break;
         case T_TRAIL:
             trailSize = t->getnextint();
+            break;
+        case T_TRAILEVERY:
+            trailEvery = t->getnextint();
             break;
         case T_ARROW:
             t->getnextcheck(T_LENGTH);
@@ -853,7 +867,7 @@ void MapItemVectorRenderer::render(GeoPainter *painter){
     RawDataBuffer *onBuf = onVar->getBuffer();
     QPen pen;
     
-    for(int i=0;i<trailSize+1;i++){
+    for(int i=0;i<trailSize+1;i+=trailEvery){
         // get the time of the item
         double t = onBuf->getTimeOfDatum(i);
         

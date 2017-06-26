@@ -263,6 +263,7 @@ void DataManager::pollDiamond(){
                     if(DataBuffer<float> *b = DataManager::findFloatBuffer(vname.toStdString().c_str())){
                         // it's a float buffer, add it as a float
                         b->write(getTimeNow(),(double)(t[j].f()));
+                        printf("%d %f\n",j,(double)(t[j].f()));
                         // if this is a linked buffer, we need to check that all the linked buffers were
                         // also updated and if not create duplicate entries.
                         if(b->isLinked())

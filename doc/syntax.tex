@@ -331,6 +331,7 @@ The point modifiers can be:
 hue range,
 \item similar saturation and value sources,
 \item a trail size to allow a number of historical points to be rendered,
+\item how many points to skip in creating the trail (\texttt{trailevery}),
 \item a format string and a source to render with that string --- for example 
 \begin{v}
 label "waypoint %.0f" var waypoint_number
@@ -352,6 +353,7 @@ pointmod    ::= 'colour' colour
             |   'value' source
 
             |   'trail' int
+            |   'trailevery' int
             |   'label' string source
 
 location    ::= lat ',' long

@@ -66,6 +66,7 @@ struct LinkedVarEntry {
 static QList<LinkedVarEntry> linkedVars;
 
 
+extern bool traceTokeniser;
 
 /// tokeniser object
 static Tokeniser tok;
@@ -115,7 +116,7 @@ static void parseAVar(bool diamond){
 #if DIAMOND
     if(diamond){
         tok.getnextcheck(T_TOPIC);
-        tok.getnextident(tname);
+        tok.getnextstring(tname);
         tok.getnextcheck(T_COMMA);
         idx = tok.getnextint();
         diamondMap[DiamondTopicKey(tname,idx)]=QString(buf);
@@ -166,7 +167,7 @@ void parseLinkedVars(bool diamond){
 #if DIAMOND
         if(diamond){
             tok.getnextcheck(T_TOPIC);
-            tok.getnextident(tname);
+            tok.getnextstring(tname);
             tok.getnextcheck(T_COMMA);
             idx = tok.getnextint();
             diamondMap[DiamondTopicKey(tname,idx)]=QString(buf);
@@ -586,6 +587,8 @@ static void parseWaypoint(){
 void ConfigManager::parseFile(QString fname){
     
     tok.init();
+    if(traceTokeniser)
+        tok.settrace(true);
     
     tok.seterrorhandler(&tokerrorhandler);
     tok.settokens(tokens);

@@ -48,6 +48,7 @@ hilight   .hilight.monconf 1 "value" .scheme.keyword
 hilight   .hilight.monconf 1 "size" .scheme.keyword
 hilight   .hilight.monconf 1 "sizerange" .scheme.keyword
 hilight   .hilight.monconf 1 "trail" .scheme.keyword
+hilight   .hilight.monconf 1 "trailevery" .scheme.keyword
 hilight   .hilight.monconf 1 "time" .scheme.keyword
 hilight   .hilight.monconf 1 "width" .scheme.keyword
 hilight   .hilight.monconf 1 "height" .scheme.keyword

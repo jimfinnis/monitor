@@ -54,6 +54,9 @@ public:
     
     /// this does the actual rendering
     virtual void render(Marble::GeoPainter *painter)=0;
+    
+    /// clear any trail
+    virtual void clearTrail(){}
 };
 
 /// used for drawing images over the map
@@ -120,6 +123,7 @@ struct MapFloat {
 class MapItemPointRenderer : public MapItemRenderer {
     
     int trailSize; //!< how many historic items to draw (zero by default)
+    int trailEvery; //!< interval for trail storage
     MapColour col;
     MapFloat size;
     DataBuffer<float> *label; //!< a float buffer from which we read an INTEGER label!
@@ -162,6 +166,7 @@ public:
 /// a renderer for vectors
 class MapItemVectorRenderer : public MapItemRenderer {
     int trailSize;
+    int trailEvery; //!< interval for trail storage
     MapColour col;
     MapFloat width;
 
@@ -218,6 +223,7 @@ class MapWidget : public Marble::MarbleWidget, UDPClientSendListener{
     
     // menu actions, checked on return from exec() of the menu
     QAction *openMenuAction;
+    QAction *clearTrailAction;
     QAction *placeWaypointAction;
     QAction *delWaypoint;
     QAction *appendWaypoint;
@@ -237,6 +243,8 @@ class MapWidget : public Marble::MarbleWidget, UDPClientSendListener{
     void insertWaypointDo(double lat, double lon);
     void clearWaypointsDo();
     void openCurrentWaypoint();
+    
+    void clearTrails();
     
     void loadImageAndCreateTransform(const char *imageName,
                                      double lat1,double lon1,double x1,double y1,
