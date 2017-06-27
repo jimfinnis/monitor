@@ -1,13 +1,12 @@
 A highly configurable Qt program for monitoring data being sent by key/value UDP packets; can also send data.
 
-#Building
-
-##Dependencies
-* You'll need Qt4 and qmake and all that jazz.
+## Dependencies
+* You'll need Qt5 (sorry, I've had to update it from Qt4), qmake and all that jazz.
 * To build the mapping widgets, you'll also need MarbleWidget (on Ubuntu, that's the *libmarble-dev* package).
+* If you want to use the Diamond Apparatus publish/subscribe comms system, you'll need to install it (from my repo) and add "diamond" to the list of CONFIG symbols. This is generally I thing only I use.
 
 ## Building
-* Run **qmake-qt4 monitor.pro** to build the makefile if you need to.
+* Run **qmake monitor.pro** to build the makefile if you need to.
 * Then run **make** to build the code.
 
 ## Running
