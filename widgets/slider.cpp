@@ -161,6 +161,10 @@ QWidget(NULL)
     epsilon = 0.001f;
     isInteger=false;
     
+#if DIAMOND
+    const char *topic = NULL;
+#endif
+    
     while(!done){
         switch(t->getnext()){
         case T_EXPR: // optional, provides a 'feedback' value
@@ -168,6 +172,14 @@ QWidget(NULL)
             t->rewind();
             buf = ConfigManager::parseFloatSource();
             break;
+#if DIAMOND
+        case T_DIAMOND:{
+            char tname[256];
+            t->getnextstring(tname);
+            topic = strdup(tname);
+            break;
+        }
+#endif
         case T_EPSILON:
             epsilon = t->getnextfloat();
             break;
@@ -218,6 +230,13 @@ QWidget(NULL)
     // create a new outvar
     
     out = new OutValue(outVar,0,always);
+#if DIAMOND
+    if(topic){
+        out->isDiamond=true;
+        out->topic=topic;
+    }
+#endif
+        
     out->listener=this; // so we know when our var was sent
     UDPClient::getInstance()->add(out);
     

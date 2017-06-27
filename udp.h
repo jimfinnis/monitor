@@ -54,9 +54,15 @@ public:
 };
 
 /// an OutValue is a float which gets sent to another UDP server
-/// (on the robot) from time to time.
+/// (on the robot) from time to time. If compiled with DIAMOND,
+/// we can also send data to the Diamond Apparatus. In this case,
+/// the topic will just have a single float (for simplicity).
 
 struct OutValue {
+#if DIAMOND
+    bool isDiamond; //!< false by default, but can be set after init.
+    const char *topic;
+#endif
     const char *name;
     double timeSent; //!< time last sent to server
     double timeChanged; //!< time last changed by client (i.e. me)

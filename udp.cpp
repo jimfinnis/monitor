@@ -13,6 +13,7 @@
 
 #include "udp.h"
 #include "doubletime.h"
+#include "diamond.h"
 
 UDPServer::UDPServer(int port){
     listener = NULL;
@@ -64,6 +65,9 @@ void UDPServer::readPendingDatagrams(){
 OutValue::OutValue(const char *n,float init,bool alw){
     name = (const char *)strdup(n);
     always=alw;
+#if DIAMOND
+    isDiamond=false;
+#endif
     val=init;
     listener=NULL;
     timeChanged = -1;
@@ -107,18 +111,30 @@ void UDPClient::update(){
     
     foreach(OutValue * const &v, values){
         if(v->always || v->timeChanged>v->timeSent){
-            QString s;
-            printf("sending %s %s (%f > %f)\n",v->name,
-                   v->always?"alw":"not-alw",v->timeChanged,v->timeSent);
-            QTextStream(&s) << " " << v->name << "=" << v->val;
+#if DIAMOND
+            if(v->isDiamond){
+                diamondapparatus::Topic t;
+                t.add(diamondapparatus::Datum(v->val));
+                diamondapparatus::publish(v->topic,t);
+            }
+            else
+#else
+            {
+                QString s;
+                printf("sending %s %s (%f > %f)\n",v->name,
+                       v->always?"alw":"not-alw",v->timeChanged,v->timeSent);
+                QTextStream(&s) << " " << v->name << "=" << v->val;
     
-            out.append(s);
+                out.append(s);
+            }
+#endif
             v->timeSent =  gettime();
             
             if(v->listener)
                 v->listener->onSend();
         }
     }
+    
     qDebug() << out;
     out.append("\n");
     if(!hasAddress){
