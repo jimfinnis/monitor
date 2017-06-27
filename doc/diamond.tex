@@ -2,7 +2,7 @@
 To add diamond support, rebuild with the appropriate config option:
 \begin{v}
 make clean
-qmake-qt4 -config diamond
+qmake -config diamond
 make
 \end{v}
 Add a DA variable with the following \texttt{vardef}:
@@ -28,4 +28,13 @@ diamond linked (
     float lon topic pos,1   range -180 to 180) 1000
 )    
 \end{v}
-
+You can also now define Diamond output sliders:
+\begin{v}
+slider 0,1 {
+    range 0 to 1
+    vertical
+    title "foo"
+    out foo
+    diamond "/footopic"
+\end{v}
+Sliders currently output a single float on a topic, for simplicity.

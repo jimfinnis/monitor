@@ -10,6 +10,7 @@
 
 #include <QColor>
 #include <QString>
+#include <QWidget>
 #include "datamgr.h"
 #include "nudgeable.h"
 #include "defaults.h"

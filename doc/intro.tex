@@ -8,19 +8,19 @@ can also send data to the remote.
 
 \subsection{Requirements}
 \begin{itemize}
-\item Qt version 4
+\item Qt version 5 (change from previous versions, which were Qt4, in
+order to have Marble still working without having to compile it)
 \item The Marble widget for displaying maps
 \item Compiled under Ubuntu -- should work, but untested on anything else
 \end{itemize}
 
 \subsection{Compilation}
 \begin{itemize}
-\item Install Qt4
+\item Install Qt5
 \item Install Marble (see \url{https://marble.kde.org/install.php}) --
 under Ubuntu this entails installing the \texttt{marble} and \texttt{libmarble-dev}
 packages
-\item From the main directory, run \texttt{qmake-qt4} (or just \texttt{qmake} if
-only Qt4 is installed) to build the makefile, then run \texttt{make}
+\item From the main directory, run \texttt{qmake} to build the makefile, then run \texttt{make}
 \item Once built, test by running \texttt{./monitor -f exampleconfig}
 \end{itemize}
 

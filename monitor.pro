@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui network
+QT       += core gui network widgets
 CONFIG  += debug
 LIBS += -lrt
 DEFINES += MARBLE
@@ -80,7 +80,7 @@ HEADERS  += app.h \
 RESOURCES += res.qrc
 # INCLUDEPATH += /usr/include/marble
 
-LIBS += -L/usr/local/lib -lmarblewidget
+LIBS += -L/usr/local/lib -lmarblewidget-qt5
 
 FORMS += \
     waypointdialog.ui

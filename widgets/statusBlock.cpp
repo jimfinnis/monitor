@@ -33,7 +33,7 @@ void StatusBlock::setGridSize(int w,int h){
     grid = new GridEntry[blockwidth*blockheight];
     
     for(int i=0;i<blockwidth*blockheight;i++){
-        grid[i].name.fromAscii("");
+        grid[i].name.fromLatin1("");
         set(i,StatusColour::BLACK);
     }
 }
@@ -41,12 +41,12 @@ void StatusBlock::setGridSize(int w,int h){
 int StatusBlock::addItem(int x, int y, const char *s){
     int id = getID(x,y);
     set(id,StatusColour::BLACK);
-    grid[id].name = QString::fromAscii(s);
+    grid[id].name = QString::fromLatin1(s);
     return id;
 }
 
 void StatusBlock::addAltText(int id,ColourCode c,const char *s){
-    grid[id].altNames[c]=QString::fromAscii(s);
+    grid[id].altNames[c]=QString::fromLatin1(s);
 }
 
 void StatusBlock::paintEvent(QPaintEvent *event){

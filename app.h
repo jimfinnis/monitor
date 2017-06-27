@@ -5,7 +5,7 @@
  */
 
 
-#include <QtGui/QApplication>
+#include <QtWidgets/QApplication>
 #include <QGridLayout>
 #include <QHash>
 #include <QFile>

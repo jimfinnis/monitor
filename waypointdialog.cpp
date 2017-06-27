@@ -2,7 +2,7 @@
 #include "ui_waypointdialog.h"
 #include "waypoint/waypoint.h"
 
-#include <QtGui>
+#include <QtWidgets>
 
 WaypointDialog::WaypointDialog(int wp,QWidget *parent) :
 QDialog(parent),ui(new Ui::WaypointDialog)
@@ -28,7 +28,7 @@ QDialog(parent),ui(new Ui::WaypointDialog)
     
     ui->tableView->setModel(model);
     // make the table fill its space
-    ui->tableView->horizontalHeader()->setResizeMode(QHeaderView::Stretch);
+    ui->tableView->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     
 //    connect(ui->saveButton,SIGNAL(clicked(bool)),this,SLOT(onSave()));
 //    connect(ui->loadButton,SIGNAL(clicked(bool)),this,SLOT(onLoad()));
