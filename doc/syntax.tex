@@ -690,7 +690,7 @@ slider is used, along with an action: \emph{up,} \emph{down} and so on. A
 feedback source is not permitted with nudge buttons.
 \begin{v}
 momentary  ::= 'momentary' pos '{'
-                    ( 'out' ident |
+                    ( 'out' ident [ 'var' ident ] |
                       'nudge' name ('up'|'down'|'centre'|'min'|'max') )
                     [ 'title' string ]
                     [ source ]

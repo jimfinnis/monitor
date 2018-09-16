@@ -5,9 +5,12 @@
 #-------------------------------------------------
 
 QT       += core gui network widgets
-CONFIG  += debug
+CONFIG  += debug diamond
 LIBS += -lrt
-DEFINES += MARBLE
+
+marble {
+    DEFINES += MARBLE
+}
 
 diamond {
     DEFINES += DIAMOND
@@ -78,9 +81,15 @@ HEADERS  += app.h \
 
 //FORMS    += mainwindow.ui
 RESOURCES += res.qrc
-# INCLUDEPATH += /usr/include/marble
 
-LIBS += -L/usr/local/lib -lmarblewidget-qt5
+LIBS += -L/usr/local/lib 
+
+
+marble {
+    INCLUDEPATH += /usr/include/marble
+    LIBS += -lmarblewidget-qt5
+
+}
 
 FORMS += \
     waypointdialog.ui
