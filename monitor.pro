@@ -5,7 +5,7 @@
 #-------------------------------------------------
 
 QT       += core gui network widgets
-CONFIG  += debug diamond
+CONFIG  += debug diamond marble
 LIBS += -lrt
 
 marble {
