@@ -307,10 +307,12 @@ void MapWidget::clearTrails(){
 }
 
 void MapWidget::resetBox(){
+    printf("Resetting map box\n");
     GeoDataLatLonBox b = GeoDataLatLonBox();
     b.setBoundaries(box.north,box.south,box.east,box.west,
                     GeoDataCoordinates::Degree);
     centerOn(b);
+    printf("Box reset\n");
 }
 
 void MapWidget::checkCenteringRenderer(MapItemRenderer *r,float lat,float lng){

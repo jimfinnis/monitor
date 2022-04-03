@@ -30,12 +30,13 @@ public:
         buffer->maxVal = mx;
     }
     
+    /// the original string
+    const char *str;
+
 private:
     /// instructions, actually a list of opcodes but the implementation
     /// is hidden
     void *instructions;
-    /// the original string
-    const char *str;
 };
 
     

@@ -84,12 +84,15 @@ void RawDataBuffer::notify(){
     for(int i=0;i<listeners.size();i++){
         listeners[i]->onNewData(this);
     }
-    for(int i=0;i<exprs.size();i++)
+    for(int i=0;i<exprs.size();i++){
+//        printf("ADD Recalc %s\n",exprs[i]->str);
         expressionsRequiringRecalc.insert(exprs[i]);
+    }
 }
 
 void DataManager::recalcExpressions(){
     foreach(Expression *p, expressionsRequiringRecalc){
+//        printf("Recalc %s\n",p->str);
         p->recalc();
     }
     expressionsRequiringRecalc.clear();
@@ -332,16 +335,23 @@ void DataManager::updateAll(){
     for(int i=0;i<allVariables.size();i++){
         allVariables[i]->notify();
     }
-    // also update the time since last packet (packetTime is the time of the
-    // last received packet)
+    tick();
+    recalcExpressions();
+}
+
+void DataManager::tick(){
     timeSinceLastPacketBuffer->write(getTimeNow(),
                                      getTimeNow()-packetTime);
-}
+}    
+
+
 
 void DataManager::init(){
     lastPacketIntervalBuffer = createFloatBuffer("lastpacketinterval",1000,0,1);
     lastPacketIntervalBuffer->setAutoRange();
     timeSinceLastPacketBuffer = createFloatBuffer("timesincepacket",1000,0,1);
     timeSinceLastPacketBuffer->setAutoRange();
+    
+    packetTime = getTimeNow();
 }
 

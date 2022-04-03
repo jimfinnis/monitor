@@ -396,6 +396,8 @@ void Expression::recalc(){
     }
     
     float value = st.pop();
+//    printf("Expr %s recalc done: %f\n",str,value);
+    
     
     Datum<float> *d = buffer->read(0);
     if(!d || d->t <= timeOfLatestChange)

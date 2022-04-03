@@ -1,5 +1,10 @@
 #monitor
 
+# This robot has waypoints.
+#
+# waypoints for this particular robot have these extra fields
+# with these default values. See waypoint/README to see how
+# these should be set up on the robot.
 
 waypoint {
     linger 0,
@@ -81,13 +86,14 @@ window size 800,800  {
         # we use an expression as a data source we must specify
         # a range.
         gauge 0,2 { expr "a+b" range -2 to 2}
+        
 
         # to the right of those, and taking up 2 notional vertical
         # slots, a status block. These consist of indicators which
         # show different values depending on their sources.
     
         status 1,0,  1,2 {
-            size 1,3 # there at 1x3 indicators in the block
+            size 1,4 # there at 1x3 indicators in the block
 
             # floatrange is the most complex type, so I'll get it out
             # of the way - this shows different colours by assigning
@@ -128,15 +134,27 @@ window size 800,800  {
                 title "a and b both -ve"
                 expr "a<0 && b<0" range auto
             }
+
+            floatrange {
+                pos 0,3
+                title "sig"
+                var timesincepacket
+                bands
+                <10 green
+                <20 yellow
+                else red
+            }            
+
         }
     
         # and finally we'll add a compass, showing a*180 (i.e. from -180 to 180)
         # as a heading.
     
-        compass 1,2 size 100 {
-            title "heading"
-            expr "a*180" range auto
-        }        
+#        compass 1,2 size 100 {
+#            title "heading"
+#            expr "a*180" range auto
+#        }        
+        number 1,2 { title "SSP" var timesincepacket }
         frame 1,3,1,1 borderless {
             momentary 0,0 {
                 title "quit"

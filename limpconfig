@@ -1,38 +1,39 @@
-var float actual1 100 range -2500 to 2500,
-    float actual2 100 range -2500 to 2500,
-    float actual3 100 range -2500 to 2500,
-    float actual4 100 range -2500 to 2500,
-    float actual5 100 range -2500 to 2500,
-    float actual6 100 range -2500 to 2500,
-    float req1 100 range -2500 to 2500,
-    float req2 100 range -2500 to 2500,
-    float req3 100 range -2500 to 2500,
-    float req4 100 range -2500 to 2500,
-    float req5 100 range -2500 to 2500,
-    float req6 100 range -2500 to 2500,
-    float lift1 100 range -20 to 20,
-    float lift2 100 range -20 to 20,
-    float lift3 100 range -20 to 20,
-    float lift4 100 range -20 to 20,
-    float lift5 100 range -20 to 20,
-    float lift6 100 range -20 to 20,
-    float current1 100 range 0 to 100,
-    float current2 100 range 0 to 100,
-    float current3 100 range 0 to 100,
-    float current4 100 range 0 to 100,
-    float current5 100 range 0 to 100,
-    float current6 100 range 0 to 100,
-    float temp1 1000 range 2 to 15,
-    float temp2 1000 range 2 to 15,
-    float temp3 1000 range 2 to 15,
-    float temp4 1000 range 2 to 15,
-    float temp5 1000 range 2 to 15,
-    float temp6 1000 range 2 to 15,
-    float temp7 1000 range 2 to 15,
-    float temp8 1000 range 2 to 15,
-    float temp9 1000 range 2 to 15,
+var {float actual1 100 range -2500 to 2500
+    float actual2 100 range -2500 to 2500
+    float actual3 100 range -2500 to 2500
+    float actual4 100 range -2500 to 2500
+    float actual5 100 range -2500 to 2500
+    float actual6 100 range -2500 to 2500
+    float req1 100 range -2500 to 2500
+    float req2 100 range -2500 to 2500
+    float req3 100 range -2500 to 2500
+    float req4 100 range -2500 to 2500
+    float req5 100 range -2500 to 2500
+    float req6 100 range -2500 to 2500
+    float lift1 100 range -20 to 20
+    float lift2 100 range -20 to 20
+    float lift3 100 range -20 to 20
+    float lift4 100 range -20 to 20
+    float lift5 100 range -20 to 20
+    float lift6 100 range -20 to 20
+    float current1 100 range 0 to 100
+    float current2 100 range 0 to 100
+    float current3 100 range 0 to 100
+    float current4 100 range 0 to 100
+    float current5 100 range 0 to 100
+    float current6 100 range 0 to 100
+    float temp1 1000 range 2 to 15
+    float temp2 1000 range 2 to 15
+    float temp3 1000 range 2 to 15
+    float temp4 1000 range 2 to 15
+    float temp5 1000 range 2 to 15
+    float temp6 1000 range 2 to 15
+    float temp7 1000 range 2 to 15
+    float temp8 1000 range 2 to 15
+    float temp9 1000 range 2 to 15
     
     float dist 1000  range 0 to 10000
+    }
 
 frame mapframe {
     gauge { pos 0,0 var req1 }

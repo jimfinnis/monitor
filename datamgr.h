@@ -73,6 +73,10 @@ public:
     /// they're a separate mechanism.
     static void updateAll();
     
+    /// update the timesincepacket data; needs to be called every now
+    /// and then even when data isn't received.
+    static void tick();
+    
     /// recalculate any expressions which need it, and 
     /// clear the set holding those expressions.
     static void recalcExpressions();
