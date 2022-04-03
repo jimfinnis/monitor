@@ -42,11 +42,13 @@ float *sliderset2; //!< another slider value
 /// a multi-state control - either 0.0, 1.0 or 2.0.
 float *multi;
 
+UDPClient *client;
+
 /// run a tick of the simulator
 void runsim(){
     
     /// output the telemetry packet - this will prepend a timestamp
-    udpwrite("a=%f heat=%f sliderout=%f sliderset2=%f multi=%f batt_pwr=3",a,*heat,sliderout,*sliderset2,*multi);
+    client->write("a=%f heat=%f sliderout=%f sliderset2=%f multi=%f batt_pwr=3",a,*heat,sliderout,*sliderset2,*multi);
     
     a += 0.15; //temperature coming in
     a += *heat*0.2; // extra heat if heater is on (note pointer)
@@ -62,8 +64,9 @@ void runsim(){
     /// turn the control variable off -- otherwise it's going to stay high.
     
     if(*cool){
+        printf("COOL SENT\n");
         a *= 0.5f; // do cooling burst
-        udpwrite("cool=1"); // acknowledge
+        client->write("cool=1"); // acknowledge
         *cool=0; // cooling off.
     }
     
@@ -79,6 +82,8 @@ int main(int argc,char *argv[]){
     
     // initialise the server, to which the monitor sends control packets
     UDPServer s(inport);
+    // and the client, which sends messages to the server
+    client = new UDPClient("127.0.0.1",outport,false);
     
     // create a few variables for the server to control
     

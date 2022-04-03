@@ -117,8 +117,7 @@ void UDPClient::update(){
                 t.add(diamondapparatus::Datum(v->val));
                 diamondapparatus::publish(v->topic,t);
             }
-            else
-#else
+#endif
             {
                 QString s;
                 printf("sending %s %s (%f > %f)\n",v->name,
@@ -127,7 +126,6 @@ void UDPClient::update(){
     
                 out.append(s);
             }
-#endif
             v->timeSent =  gettime();
             
             if(v->listener)

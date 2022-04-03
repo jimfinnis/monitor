@@ -23,9 +23,14 @@
 #include <stdlib.h>
 #include "udpclient.h"
 
-static const char *serverAddr = "192.168.2.255";
+UDPClient::UDPClient(const char *addr, int port, bool isBroadcast){
+    serverAddr = addr;
+    serverPort = port;
+    broadcast = isBroadcast;
+}
 
-bool udpSend(const char *hostip, int port, const char *msg){
+bool UDPClient::send(const char *msg){
+    // we set up the socket every time, which is certainly wasteful.
     sockaddr_in servaddr;
     int fd = socket(AF_INET,SOCK_DGRAM,0);
     if(fd<0){
@@ -33,14 +38,17 @@ bool udpSend(const char *hostip, int port, const char *msg){
         return false;
     }
     
-    
     bzero(&servaddr,sizeof(servaddr));
     servaddr.sin_family = AF_INET;
-    servaddr.sin_addr.s_addr = inet_addr(hostip);
-    servaddr.sin_port = htons(port);
+    servaddr.sin_addr.s_addr = inet_addr(serverAddr);
+    servaddr.sin_port = htons(serverPort);
     
-    char opt=1;
-    setsockopt(fd, SOL_SOCKET, SO_BROADCAST, &opt, sizeof(int));
+//    printf("Send to %s:%d\n",serverAddr,serverPort);
+    
+    if(broadcast){
+        char opt=1;
+        setsockopt(fd, SOL_SOCKET, SO_BROADCAST, &opt, sizeof(int));
+    }
           
     if (sendto(fd, msg, strlen(msg)+1, 0, // +1 to include terminator
                (sockaddr*)&servaddr, sizeof(servaddr)) < 0){
@@ -65,15 +73,14 @@ static double gettime(){
 
 /// a useful function to write a UDP packet prefixed by a timestamp
 /// and formatted with printf semantics.
-void udpwrite(const char *s,...){
-    extern int outport;
+void UDPClient::write(const char *s,...){
     va_list args;
     va_start(args,s);
     char buf[1024];
     sprintf(buf,"time=%f ",gettime());
     vsnprintf(buf+strlen(buf),1024-strlen(buf),s,args);
     printf("%s\n",buf);
-    udpSend(serverAddr,outport,buf); // SEND TO 
+    send(buf); // SEND TO 
     va_end(args);
 }
 

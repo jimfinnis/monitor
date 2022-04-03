@@ -153,6 +153,7 @@ Application::Application(int &argc,char *argv[]) : QApplication(argc,argv){
     timer = new QTimer();
     connect(timer,SIGNAL(timeout()),this,SLOT(pollDiamond()));
     timer->start(100);
+    printf("Diamond Apparatus support included.\n");
 #endif
             
     udpServer = new UDPServer(port);

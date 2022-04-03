@@ -60,13 +60,13 @@ void UDPServer::parseLine(const char *s){
     enum { WAITVAR,INVAR,WAITEQ,WAITVAL,INVAL } mode;
     
     
-//    if(0==(rand()%5))return; // for debugging, skips random packets
+    //    if(0==(rand()%5))return; // for debugging, skips random packets
+    
     
     mode = WAITVAR;
     
     char varbuf[256];
     char valbuf[256];
-    printf("   %s\n",s);
     do {
         switch(mode){
         case WAITVAR:
@@ -124,8 +124,9 @@ void UDPServer::update(){
         // either an error or socket disconnected
         return;
     }
-    printf("%d\n",size);
+    printf("Size of packet: %d\n",size);
     buf[size]=0;
+    printf("Packet: %s\n",buf);
     char *s = buf;
     
     int done=0;
