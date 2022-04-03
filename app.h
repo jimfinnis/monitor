@@ -50,7 +50,7 @@ public:
     
     Window *createWindow();
     
-    explicit Application(int argc,char *argv[]);
+    explicit Application(int &argc,char *argv[]);
     virtual void processUDP(char *s,int size);
     
     ~Application();

@@ -7,8 +7,8 @@
  */
 
 
-#ifndef __EXCEPTION_H
-#define __EXCEPTION_H
+#ifndef __EXCEPTIONN_H
+#define __EXCEPTIONN_H
 
 #include <string.h>
 #include <stdio.h>

@@ -96,7 +96,7 @@ void Application::ackMessage(){
 }    
 
 
-Application::Application(int argc,char *argv[]) : QApplication(argc,argv){
+Application::Application(int &argc,char *argv[]) : QApplication(argc,argv){
     DataManager::init();
     StatusColour::initColours();
     
