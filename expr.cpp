@@ -28,6 +28,29 @@ class ExprTError : public ITokeniserErrorHandler{
 
 static ExprTError tokerrorhandler;
 
+// data object for the execution stack
+// bools are represented by floats where
+// +ve is true and -ve is false.
+
+struct ExprDatum {
+    bool valid;
+    float val;
+    
+    ExprDatum(float value, bool isvalid){
+        valid = isvalid;
+        val = value;
+    }
+    
+    ExprDatum(){
+        valid = false;
+        val = 0;
+    }
+};
+
+
+ExprDatum bad(0,false);
+
+
 
 /// operators
 enum Opcode {
@@ -294,12 +317,11 @@ Expression::Expression(const char *s){
     
 }
 
+
 void Expression::recalc(){
     
-    // stack of floats - bools are represented by floats where
-    // +ve is true and -ve is false.
-    
-    QStack<float> st;
+    QStack<ExprDatum> st;
+    ExprDatum a,b;
     
     double timeOfLatestChange=0;
     
@@ -307,74 +329,78 @@ void Expression::recalc(){
     for(int i=0;i<insts->size();i++){
         Instruction *ip = (*insts)[i];
         
-        float a,b;
         
         
         //        dumpinst(i,ip);
         
         switch(ip->op){
         case OP_ADD:
-            st.push(st.pop() + st.pop());
+            b = st.pop();
+            a = st.pop();
+            st.push(ExprDatum(a.val+b.val,a.valid && b.valid));
             break;
         case OP_MUL:
-            st.push(st.pop() * st.pop());
+            b = st.pop();
+            a = st.pop();
+            st.push(ExprDatum(a.val*b.val,a.valid && b.valid));
             break;
         case OP_DIV:
             b = st.pop();
             a = st.pop();
-            st.push(a/b);
+            st.push(ExprDatum(a.val/b.val,a.valid && b.valid));
             break;
         case OP_SUB:
             b = st.pop();
             a = st.pop();
-            st.push(a-b);
+            st.push(ExprDatum(a.val-b.val,a.valid && b.valid));
             break;
         case OP_LT:
             b = st.pop();
             a = st.pop();
-            st.push(a<b?1:-1);
+            st.push(ExprDatum((a.val<b.val) ? 1 : -1, a.valid && b.valid));
             break;
         case OP_GT:
             b = st.pop();
             a = st.pop();
-            st.push(a>b?1:-1);
+            st.push(ExprDatum((a.val>=b.val) ? 1 : -1, a.valid && b.valid));
             break;
         case OP_LE:
             b = st.pop();
             a = st.pop();
-            st.push(a<=b?1:-1);
+            st.push(ExprDatum((a.val<=b.val) ? 1 : -1, a.valid && b.valid));
             break;
         case OP_GE:
             b = st.pop();
             a = st.pop();
-            st.push(a>=b?1:-1);
+            st.push(ExprDatum((a.val>=b.val) ? 1 : -1, a.valid && b.valid));
             break;
         case OP_EQ:
             b = st.pop();
             a = st.pop();
-            st.push(a==b?1:-1);
+            st.push(ExprDatum((a.val==b.val) ? 1 : -1, a.valid && b.valid));
             break;
         case OP_NE:
             b = st.pop();
             a = st.pop();
-            st.push(a!=b?1:-1);
+            st.push(ExprDatum((a.val!=b.val) ? 1 : -1, a.valid && b.valid));
             break;
         case OP_AND:
             b = st.pop();
             a = st.pop();
-            st.push((a>0 && b>0) ? 1 : -1);
+            st.push(ExprDatum((a.val>0 && b.val>0) ? 1 : -1, a.valid && b.valid));
             break;
         case OP_OR:
             b = st.pop();
             a = st.pop();
-            st.push((a>0 || b>0) ? 1 : -1);
+            st.push(ExprDatum((a.val>0 && b.val>0) ? 1 : -1, a.valid && b.valid));
             break;
         case OP_NEGATE:
         case OP_NOT:
-            st.push(-st.pop());
+            a = st.pop();
+            st.push(ExprDatum(-a.val,a.valid));
             break;
         case OP_FLOATLIT:
-            st.push(ip->d.f);
+            st.push(ExprDatum(ip->d.f,true));
             break;
         case OP_GETFLOAT:
             {
@@ -383,9 +409,9 @@ void Expression::recalc(){
                     if(d->t > timeOfLatestChange)
                         timeOfLatestChange=d->t;
                     
-                    st.push(d->d);
+                    st.push(ExprDatum(d->d,true));
                 }else
-                      st.push(0); // undefined value is zero
+                      st.push(ExprDatum(0,false)); // undefined value
             }
             break;
         case OP_OPREN:
@@ -395,8 +421,13 @@ void Expression::recalc(){
         }
     }
     
-    float value = st.pop();
-//    printf("Expr %s recalc done: %f\n",str,value);
+    // we want all booleans to come out as negative here; so what
+    // we'll do is set invalid data to be -1 when we convert to float.
+    
+    a = st.pop();
+    float value = a.valid ? a.val : -1;
+    
+    printf("Expr %s recalc done: %f\n",str,value);
     
     
     Datum<float> *d = buffer->read(0);

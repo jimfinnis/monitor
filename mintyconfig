@@ -199,7 +199,7 @@ window inverse title "Telemetry Data" {
         
 
      status 0,3,  4,3 {
-            size 4,1 
+            size 5,1 
 
             # floatrange is the most complex type, so I'll get it out
             # of the way - this shows different colours by assigning
@@ -280,6 +280,22 @@ window inverse title "Telemetry Data" {
                 when red2 "FIELDS"
                 when red3 "TIMEOUT"
             }
+            col orange "#fa0" true
+            
+            floatrange {
+                pos 4,0
+                title "DATA"
+                var timesincepacket
+                bands
+                <3      green
+                <4      yellow
+                <6      orange
+                else    red
+                when green "DATA OK"
+                when yellow "DATA OK?"
+                when orange "DATA STALE"
+                when red "DATA LOST"
+            }   
                 
         }
     } 
